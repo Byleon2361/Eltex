@@ -33,11 +33,11 @@ int main()
                     if (abonents[i].name[0] == '\000')
                     {
                         printf("Введите имя\n");
-                        scanf("%s", abonents[i].name);
+                        scanf("%9s", abonents[i].name);
                         printf("Введите фамилию\n");
-                        scanf("%s", abonents[i].second_name);
+                        scanf("%9s", abonents[i].second_name);
                         printf("Введите номер\n");
-                        scanf("%s", abonents[i].tel);
+                        scanf("%9s", abonents[i].tel);
                         count++;
                         break;
                     }
@@ -46,7 +46,7 @@ int main()
             case 2:
 
                 printf("Введите имя абонента для удаления\n");
-                scanf("%s", name);
+                scanf("%9s", name);
                 for (int i = 0; i < count; i++)
                 {
                     if (strcmp(abonents[i].name, name) == 0)
@@ -63,7 +63,7 @@ int main()
             case 3:
 
                 printf("Введите имя для поиска\n");
-                scanf("%s", name);
+                scanf("%9s", name);
                 for (int i = 0; i < count; i++)
                 {
                     if (strcmp(abonents[i].name, name) == 0)
@@ -86,6 +86,7 @@ int main()
                     printf("--------------------------\n");
                 }
                 break;
+            default: printf("Неверный номер"); break;
         }
     }
     return 0;
