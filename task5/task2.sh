@@ -1,3 +1,3 @@
 #!/bin/sh
 
-gcc -Wall -Wno-implicit-function-declaration -g -O0 -fno-stack-protector -no-pie  -o app2 task2.c
+gcc -Wall -Wno-implicit-function-declaration -g -O1 -fno-stack-protector -no-pie task2.c -o app2
