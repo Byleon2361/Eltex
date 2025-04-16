@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-double myAdd(double a, double b);
-double mySub(double a, double b);
-double myMul(double a, double b);
-double myDiv(double a, double b);
+int myAdd(int a, int b);
+int mySub(int a, int b);
+int myMul(int a, int b);
+int myDiv(int a, int b);

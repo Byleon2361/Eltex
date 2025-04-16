@@ -1,5 +1,5 @@
 #include "libcalc.h"
-double mySub(double a, double b)
+int mySub(int a, int b)
 {
     return a - b;
 }

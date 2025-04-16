@@ -1,5 +1,5 @@
 #include "libcalc.h"
-double myAdd(double a, double b)
+int myAdd(int a, int b)
 {
     return a + b;
 }
