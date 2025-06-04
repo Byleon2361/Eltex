@@ -1,16 +1,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
+#include <dirent.h>
 extern int COLS;
 extern int LINES;
-int main()
+
+WINDOW *statusWin;
+int status(WINDOW *win, int cols)
 {
-    SCREEN* s;
+  statusWin=win;
+  wprintw(win,"status");
+  wrefresh(win);
+  return OK;
+}
+void changeStatus(char *str)
+{
+  wclear(statusWin);
+  wprintw(statusWin, "status: %s", str);
+  wrefresh(statusWin);
+}
+void initMc()
+{
     WINDOW* left;
     WINDOW* right;
 
+    ripoffline(-1,status);
     slk_init(1);
-    s = newterm(NULL, stdout, stdin);
+    initscr();
+
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
@@ -68,7 +85,23 @@ int main()
     refresh();
     wrefresh(left);
     wrefresh(right);
+}
+int wprintDir()
+{
+  DIR* dir = opendir(".");
+  if(dir == NULL)
+  {
+    return 1;
+  }
+  
+  closedir(dir);
+  return 0;
+}
 
+int main()
+{
+    initMc();
+    wprintDir();
     int ch;
     bool exit = 0;
     while (!exit)
@@ -77,19 +110,19 @@ int main()
         ch = getch();
         if (ch == '\t')  // tab
         {
-            printf("tab|");
+            changeStatus("Tab");
         }
         else if (ch == 'w' || ch == KEY_UP)  // up
         {
-            printf("up|");
+            changeStatus("Up");
         }
         else if (ch == 's' || ch == KEY_DOWN)  // down
         {
-            printf("down|");
+            changeStatus("Down");
         }
         else if (ch == '\n' || ch == '\r')  // enter
         {
-            printf("enter|");
+            changeStatus("Enter");
         }
         else if (ch == 'q' || ch == 27)  // escape
         {
@@ -97,12 +130,12 @@ int main()
         }
         else
         {
-            printf("Непонятный символ|");
+            changeStatus("Unknow symbol");
         }
         refresh();
     }
 
     endwin();
-    delscreen(s);
     return 0;
 }
+
