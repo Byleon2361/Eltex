@@ -38,7 +38,7 @@ MyWindow* createTable(int pos)
   WINDOW* win = newwin(LINES, COLS / 2, 0, pos);
   WINDOW* nameWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol * 0);
   WINDOW* sizeWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol * 1);
-  WINDOW* dateWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol * 2);
+  WINDOW* dateWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol* 2);
 
       wbkgd(win, COLOR_PAIR(1));
     wbkgd(nameWin, COLOR_PAIR(1));
@@ -105,14 +105,51 @@ int highlightFile(MyWindow* activeWin, int y, int x)
   for(int i =0;i< COUNT_SUBWINS; i++ )
   {  
 	  width = getmaxx(activeWin->subWins[i]) - 2;
-    wchgat(activeWin->subWins[i], width,A_NORMAL,1,NULL);
+    wchgat(activeWin->subWins[i], width,A_NORMAL,1,NULL);//затираем предыдущую
     wmove(activeWin->subWins[i],y,x+1);
     wchgat(activeWin->subWins[i], width,A_NORMAL,2,NULL);
     wrefresh(activeWin->subWins[i]);
   }
   return 0;
 }
+int dehighlightFile(MyWindow* activeWin)
+{
+	int width = 0;
+  for(int i =0;i< COUNT_SUBWINS; i++ )
+  {  
+	  width = getmaxx(activeWin->subWins[i]) - 2;
+    wchgat(activeWin->subWins[i], width,A_NORMAL,1,NULL);//затираем предыдущую
+    wrefresh(activeWin->subWins[i]);
+  }
+  return 0;
+}
+void refreshMyWindow(MyWindow* win)
+{
+	refresh();
+	wrefresh(win->win);
+	wrefresh(win->subWins[0]);
+	wrefresh(win->subWins[1]);
+	wrefresh(win->subWins[2]);
+}
+void clearMyWin(MyWindow* myWin)
+{
+  int start_line = 2;
+  for (int i = start_line; i < LINES; i++)
+  {
+    wmove(myWin->subWins[0], i, 1);
+    wclrtoeol(myWin->subWins[0]);
 
+    wmove(myWin->subWins[1], i, 1);
+    int width = getmaxx(myWin->subWins[1]) - 3;
+    whline(myWin->subWins[1], ' ', width);
+
+    wmove(myWin->subWins[2], i, 0);
+    wclrtoeol(myWin->subWins[2]);
+  }
+  box(myWin->win, 0, 0);
+  wborder(myWin->subWins[1], ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_TTEE, ACS_TTEE, ACS_BTEE, ACS_BTEE);
+ refreshMyWindow(myWin);
+}
 int wprintDir(MyWindow* myWin,struct dirent ***namelist, char* path)
 {
   int n = scandir(path, namelist, 0, alphasort);
@@ -123,16 +160,7 @@ int wprintDir(MyWindow* myWin,struct dirent ***namelist, char* path)
     return -1;
   }  
 
-  int start_line = 2;
-  for (int i = start_line; i < LINES; i++)
-  {
-    wmove(myWin->subWins[0], i, 1);
-    wclrtoeol(myWin->subWins[0]);
-    wmove(myWin->subWins[1], i, 1);
-    wclrtoeol(myWin->subWins[1]);
-    wmove(myWin->subWins[2], i, 1);
-    wclrtoeol(myWin->subWins[2]);
-  }
+  clearMyWin(myWin);
 
   struct stat fileInfo;
   char pathToFile[PATH_MAX];
@@ -159,14 +187,6 @@ int wprintDir(MyWindow* myWin,struct dirent ***namelist, char* path)
     offset++;
   }
   return i;
-}
-void refreshMyWindow(MyWindow* win)
-{
-	refresh();
-	wrefresh(win->win);
-	wrefresh(win->subWins[0]);
-	wrefresh(win->subWins[1]);
-	wrefresh(win->subWins[2]);
 }
 void freeNamelist(struct dirent **namelist, int count) {
     if (!namelist) return;
@@ -207,6 +227,7 @@ refreshMyWindow(right);
     if (ch == '\t')  // tab
     {
       changeStatus("Tab");
+      dehighlightFile(activeWin);
       if(activeWin == left)
       {
         activeWin = right;
