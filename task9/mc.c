@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <ncurses.h>
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
-#define COUNTSUBWINS 3
+#define COUNT_SUBWINS 3
 extern int COLS;
 extern int LINES;
 
@@ -12,7 +13,7 @@ WINDOW *statusWin;
 typedef struct myWindow
 {
   WINDOW* win;
-  WINDOW* subWins[COUNTSUBWINS];
+  WINDOW* subWins[COUNT_SUBWINS];
 } MyWindow;
 int status(WINDOW *win, int cols)
 {
@@ -98,7 +99,7 @@ void initMc()
 int highlightFile(MyWindow* activeWin, int y, int x)
 {
 	int width = 0;
-  for(int i =0;i< COUNTSUBWINS; i++ )
+  for(int i =0;i< COUNT_SUBWINS; i++ )
   {  
 	  width = getmaxx(activeWin->subWins[i]) - 2;
     wchgat(activeWin->subWins[i], width,A_NORMAL,1,NULL);
@@ -109,17 +110,9 @@ int highlightFile(MyWindow* activeWin, int y, int x)
   return 0;
 }
 
-int wprintDir(MyWindow* myWin, char* path)
+int wprintDir(MyWindow* myWin,struct dirent ***namelist, char* path)
 {
-  struct dirent **namelist;
-  DIR* dir = opendir(path);
-  if(dir == NULL)
-  {
-    perror("Can not read dir");
-    return -1;
-  }
-  int n=0;
-  n = scandir(path, &namelist, 0, alphasort);
+  int n = scandir(path, namelist, 0, alphasort);
   if(n < 0)
   {
     perror("Can not scan dir");
@@ -127,18 +120,28 @@ int wprintDir(MyWindow* myWin, char* path)
     return -1;
   }  
 
+    int start_line = 2;
+    for (int i = start_line; i < LINES; i++)
+    {
+        wmove(myWin->subWins[0], i, 1);
+        wclrtoeol(myWin->subWins[0]);
+        wmove(myWin->subWins[1], i, 1);
+        wclrtoeol(myWin->subWins[1]);
+        wmove(myWin->subWins[2], i, 1);
+        wclrtoeol(myWin->subWins[2]);
+    }
+
   int offset = 2;
   int i = 0;
   for( i = 0; i < n; i++)
   {
-    if(strcmp(namelist[i]->d_name, ".")==0)
+    if(strcmp((*namelist)[i]->d_name, ".")==0)
     {
       continue;
     }
 
-    mvwprintw(myWin->subWins[0],  offset++, 1, "%s", namelist[i]->d_name);
+    mvwprintw(myWin->subWins[0],  offset++, 1, "%s",(*namelist)[i]->d_name);
   }
-  closedir(dir);
   return i;
 }
 void refreshMyWindow(MyWindow* win)
@@ -146,31 +149,36 @@ void refreshMyWindow(MyWindow* win)
 	refresh();
 	wrefresh(win->win);
 	wrefresh(win->subWins[0]);
+	wrefresh(win->subWins[1]);
 	wrefresh(win->subWins[2]);
-	wrefresh(win->subWins[3]);
+}
+void freeNamelist(struct dirent **namelist, int count) {
+    if (!namelist) return;
+    for (int i = 0; i < count; i++) {
+        free(namelist[i]);
+    }
+    free(namelist);
 }
 int main()
 {
   initMc();
+
   MyWindow* left = createTable(0);
   MyWindow* right = createTable(COLS/2);
   MyWindow* activeWin = left;
   int countFiles = 0;
-  countFiles = wprintDir(left, ".");
-  if(countFiles< 0)
-  {
-    changeStatus("Can not print dir on the screen");
-    //return 1;
-  }
-  countFiles = wprintDir(left, ".");
-  if(countFiles< 0)
-  {
-    changeStatus("Can not print dir on the screen");
-    //return 1;
-  }
+  struct dirent **namelist = NULL;
+
+  countFiles = wprintDir(right,&namelist, ".");
+  countFiles = wprintDir(left,&namelist, ".");
 
 refreshMyWindow(left);
 refreshMyWindow(right);
+
+      char fullPath[PATH_MAX];
+      char currentPath[PATH_MAX];
+      getcwd(currentPath, sizeof(currentPath));
+
   int x = 0;
   int y = 2;
   int ch;
@@ -192,13 +200,13 @@ refreshMyWindow(right);
         activeWin = left;
       }
     }
-    else if (ch == 'w' || ch == KEY_UP)  // up
+    else if (ch == 'w' ||ch == 'k' || ch == KEY_UP)  // up
     {
       changeStatus("Up");
       if(y>2)
       y--;
     }
-    else if (ch == 's' || ch == KEY_DOWN)  // down
+    else if (ch == 's' || ch == 'j' ||  ch == KEY_DOWN)  // down
     {
       changeStatus("Down");
       if(y < countFiles)
@@ -207,7 +215,13 @@ refreshMyWindow(right);
     else if (ch == '\n' || ch == '\r')  // enter
     {
       changeStatus("Enter");
-      wprintDir(activeWin, ".");
+snprintf(fullPath, sizeof(fullPath), "%s/%s", currentPath, namelist[y-1]->d_name);
+      if (namelist[y-1]->d_type == DT_DIR)
+      {
+        freeNamelist(namelist, countFiles);
+        countFiles = wprintDir(activeWin, &namelist, fullPath);
+        strcpy(currentPath, fullPath);
+      }
     }
     else if (ch == 'q' || ch == 27)  // escape
     {
