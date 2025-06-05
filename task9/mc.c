@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+#define COUNTSUBWINS 3
 extern int COLS;
 extern int LINES;
 
@@ -11,9 +12,7 @@ WINDOW *statusWin;
 typedef struct myWindow
 {
   WINDOW* win;
-  WINDOW* nameWin;
-  WINDOW* sizeWin;
-  WINDOW* dateWin;
+  WINDOW* subWins[COUNTSUBWINS];
 } MyWindow;
 int status(WINDOW *win, int cols)
 {
@@ -48,9 +47,9 @@ MyWindow* createTable(int pos)
   wattr_off(win,COLOR_PAIR(3),NULL);
 
   myWin->win = win;
-  myWin->dateWin = dateWin;
-  myWin->sizeWin = sizeWin;
-  myWin->nameWin = nameWin;
+  myWin->subWins[0] = nameWin;
+  myWin->subWins[1] = sizeWin;
+  myWin->subWins[2] = dateWin;
 
   return myWin;
 }
@@ -82,14 +81,17 @@ void initMc()
   init_pair(1, COLOR_WHITE, COLOR_BLUE); // дефолтный цвет
   init_pair(2, COLOR_BLACK, COLOR_CYAN); //Выделенная директория или файл
   init_pair(3, COLOR_YELLOW, COLOR_BLUE); //Заголовки
-  wattr_on(stdscr, COLOR_PAIR(1), NULL);
 
 }
 int highlightFile(MyWindow* activeWin, int y, int x)
 {
-  wmove(activeWin->win,y,x);
-  wchgat(activeWin->win, COLS/2,A_NORMAL,2,NULL);
-  wrefresh(activeWin->nameWin);
+  for(int i =0;i< COUNTSUBWINS; i++ )
+  {  
+    wchgat(activeWin->subWins[i], COLS/2,A_NORMAL,1,NULL);
+    wmove(activeWin->subWins[i],y,x);
+    wchgat(activeWin->subWins[i], COLS/2,A_NORMAL,2,NULL);
+    wrefresh(activeWin->subWins[i]);
+  }
   return 0;
 }
 
@@ -119,11 +121,8 @@ int wprintDir(MyWindow* myWin)
       continue;
     }
 
-    mvwprintw(myWin->nameWin,  offset++, 1, "%s", namelist[i]->d_name);
+    mvwprintw(myWin->subWins[0],  offset++, 1, "%s", namelist[i]->d_name);
   }
-//  wmove(myWin->win,y,x);
- // wchgat(myWin->win, COLS/2,A_NORMAL,2,NULL);
- // wrefresh(myWin->nameWin);
   closedir(dir);
   return 0;
 }
@@ -172,12 +171,12 @@ int main()
     else if (ch == 'w' || ch == KEY_UP)  // up
     {
       changeStatus("Up");
-      x++;
+      y--;
     }
     else if (ch == 's' || ch == KEY_DOWN)  // down
     {
       changeStatus("Down");
-      x--;
+      y++;
     }
     else if (ch == '\n' || ch == '\r')  // enter
     {
