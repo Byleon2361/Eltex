@@ -1,3 +1,4 @@
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -5,6 +6,8 @@
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <time.h>
 #define COUNT_SUBWINS 3
 extern int COLS;
 extern int LINES;
@@ -120,17 +123,19 @@ int wprintDir(MyWindow* myWin,struct dirent ***namelist, char* path)
     return -1;
   }  
 
-    int start_line = 2;
-    for (int i = start_line; i < LINES; i++)
-    {
-        wmove(myWin->subWins[0], i, 1);
-        wclrtoeol(myWin->subWins[0]);
-        wmove(myWin->subWins[1], i, 1);
-        wclrtoeol(myWin->subWins[1]);
-        wmove(myWin->subWins[2], i, 1);
-        wclrtoeol(myWin->subWins[2]);
-    }
+  int start_line = 2;
+  for (int i = start_line; i < LINES; i++)
+  {
+    wmove(myWin->subWins[0], i, 1);
+    wclrtoeol(myWin->subWins[0]);
+    wmove(myWin->subWins[1], i, 1);
+    wclrtoeol(myWin->subWins[1]);
+    wmove(myWin->subWins[2], i, 1);
+    wclrtoeol(myWin->subWins[2]);
+  }
 
+  struct stat fileInfo;
+  char pathToFile[PATH_MAX];
   int offset = 2;
   int i = 0;
   for( i = 0; i < n; i++)
@@ -139,8 +144,19 @@ int wprintDir(MyWindow* myWin,struct dirent ***namelist, char* path)
     {
       continue;
     }
+    snprintf(pathToFile, sizeof(pathToFile), "%s/%s", path, (*namelist)[i]->d_name);
 
-    mvwprintw(myWin->subWins[0],  offset++, 1, "%s",(*namelist)[i]->d_name);
+    mvwprintw(myWin->subWins[0],  offset, 1, "%s",(*namelist)[i]->d_name);
+    if (stat(pathToFile, &fileInfo) == 0)
+    {
+      mvwprintw(myWin->subWins[1], offset, 1, "%ld", (long)fileInfo.st_size);
+      mvwprintw(myWin->subWins[2], offset, 1, "%s", ctime(&fileInfo.st_ctime));
+    } 
+    else
+    {
+      perror("stat");
+    }
+    offset++;
   }
   return i;
 }
@@ -199,6 +215,7 @@ refreshMyWindow(right);
       {
         activeWin = left;
       }
+  countFiles = wprintDir(activeWin,&namelist, ".");
     }
     else if (ch == 'w' ||ch == 'k' || ch == KEY_UP)  // up
     {
@@ -221,6 +238,10 @@ snprintf(fullPath, sizeof(fullPath), "%s/%s", currentPath, namelist[y-1]->d_name
         freeNamelist(namelist, countFiles);
         countFiles = wprintDir(activeWin, &namelist, fullPath);
         strcpy(currentPath, fullPath);
+      }
+      else
+      {
+changeStatus("It is file");
       }
     }
     else if (ch == 'q' || ch == 27)  // escape
