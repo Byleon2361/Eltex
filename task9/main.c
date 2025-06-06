@@ -10,8 +10,8 @@ int main()
     int countFiles = 0;
     struct dirent** namelist = NULL;
 
-    countFiles = wprintDir(right, &namelist, ".");
-    countFiles = wprintDir(left, &namelist, ".");
+    countFiles = wprintDir(right, &namelist, ".", 0);
+    countFiles = wprintDir(left, &namelist, ".",0);
 
     refreshMyWindow(left);
     refreshMyWindow(right);
@@ -22,6 +22,7 @@ int main()
 
     int x = 0;
     int y = 2;
+    int offsetVisibleArea = 0;
     int ch;
     bool exit = 0;
     while (!exit)
@@ -41,17 +42,31 @@ int main()
             {
                 activeWin = left;
             }
-            countFiles = wprintDir(activeWin, &namelist, ".");
         }
         else if (ch == 'w' || ch == 'k' || ch == KEY_UP)  // up
         {
             changeStatus("Up");
             if (y > 2) y--;
+            else if(offsetVisibleArea > 0)
+            {
+              offsetVisibleArea--;
+              y = 2;
+              wprintDir(activeWin, &namelist, currentPath, offsetVisibleArea);
+            }
         }
         else if (ch == 's' || ch == 'j' || ch == KEY_DOWN)  // down
         {
             changeStatus("Down");
-            if (y < countFiles) y++;
+            int widthVisibleArea = LINES-3;
+            if(y<2+widthVisibleArea - 1 && y < countFiles)
+            {
+              y++;
+            }
+            else if (offsetVisibleArea + widthVisibleArea < countFiles)
+            {
+              offsetVisibleArea++;
+              wprintDir(activeWin, &namelist, currentPath, offsetVisibleArea);
+            }
         }
         else if (ch == '\n' || ch == '\r')  // enter
         {
@@ -66,7 +81,7 @@ int main()
             if (namelist[y - 1]->d_type == DT_DIR)
             {
                 freeNamelist(namelist, countFiles);
-                countFiles = wprintDir(activeWin, &namelist, fullPath);
+                countFiles = wprintDir(activeWin, &namelist, fullPath, offsetVisibleArea);
                 strcpy(currentPath, fullPath);
             }
             else

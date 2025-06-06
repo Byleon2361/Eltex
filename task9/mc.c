@@ -81,7 +81,7 @@ MyWindow* createTable(int pos)
     refreshMyWindow(myWin);
     return myWin;
 }
-int wprintDir(MyWindow* myWin, struct dirent*** namelist, char* path)
+int wprintDir(MyWindow* myWin, struct dirent*** namelist, char* path, int startVisibleArea)
 {
     int n = scandir(path, namelist, 0, alphasort);
     if (n < 0)
@@ -97,7 +97,12 @@ int wprintDir(MyWindow* myWin, struct dirent*** namelist, char* path)
     char pathToFile[PATH_MAX];
     char time_str[20];
     int offset = 2;
-    for (int i = 0; i < n; i++)
+    int widthVisibleArea = LINES -3;
+    int endVisivleArea = startVisibleArea + widthVisibleArea;
+    if(endVisivleArea > n)
+      endVisivleArea = n;
+    
+    for (int i = startVisibleArea; i < endVisivleArea; i++)
     {
         if (strcmp((*namelist)[i]->d_name, ".") == 0)
         {
