@@ -1,5 +1,5 @@
 #include "libcalc.h"
-int myDiv(int a, int b)
+int mydiv(int a, int b)
 {
     if (b == 0)
     {
