@@ -8,17 +8,24 @@ int main()
     MyWindow* activeWin = left;
 
     int countFiles = 0;
+    int countPrevFiles = 0;
+    int countTempFiles = 0;
     struct dirent** namelist = NULL;
 
-    countFiles = wprintDir(right, &namelist, ".", 0);
+    countPrevFiles = wprintDir(right, &namelist, ".", 0);
     countFiles = wprintDir(left, &namelist, ".",0);
 
     refreshMyWindow(left);
     refreshMyWindow(right);
 
     char fullPath[PATH_MAX];
+    char leftPath[PATH_MAX];
+    char rigthPath[PATH_MAX];
     char currentPath[PATH_MAX];
+    char prevPath[PATH_MAX];
+    char tempPath[PATH_MAX];
     getcwd(currentPath, sizeof(currentPath));
+    getcwd(prevPath, sizeof(prevPath));
 
     int x = 0;
     int y = 2;
@@ -34,6 +41,12 @@ int main()
         {
             changeStatus("Tab");
             dehighlightFile(activeWin);
+
+                strcpy(tempPath,prevPath);
+                strcpy(prevPath,currentPath);
+
+              countTempFiles = countPrevFiles;
+              countPrevFiles = countFiles;
             if (activeWin == left)
             {
                 activeWin = right;
@@ -42,6 +55,14 @@ int main()
             {
                 activeWin = left;
             }
+
+            countFiles = countTempFiles;
+
+            if (y > 2 + countFiles - 1)
+            {
+              y = (countFiles > 0) ? 2 + countFiles - 2 : 2;
+            }
+            strcpy(currentPath, tempPath);
         }
         else if (ch == 'w' || ch == 'k' || ch == KEY_UP)  // up
         {
