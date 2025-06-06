@@ -1,54 +1,65 @@
-#include <linux/limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <ncurses.h>
-#include <dirent.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <time.h>
-#define COUNT_SUBWINS 3
-extern int COLS;
-extern int LINES;
-
-WINDOW *statusWin;
-typedef struct myWindow
+#include "mc.h"
+WINDOW* statusWin = NULL;
+int status(WINDOW* win, int cols)
 {
-  WINDOW* win;
-  WINDOW* subWins[COUNT_SUBWINS];
-} MyWindow;
-int status(WINDOW *win, int cols)
-{
-  statusWin=win;
-  wprintw(win,"status");
-  wrefresh(win);
-  return OK;
+    statusWin = win;
+    wprintw(win, "status");
+    wrefresh(win);
+    return OK;
 }
-void changeStatus(char *str)
+void changeStatus(char* str)
 {
-  wclear(statusWin);
-  wprintw(statusWin, "status: %s", str);
-  wrefresh(statusWin);
+    wclear(statusWin);
+    wprintw(statusWin, "status: %s", str);
+    wrefresh(statusWin);
+}
+void initMc()
+{
+    ripoffline(-1, status);
+    slk_init(1);
+    initscr();
+
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    notimeout(stdscr, 0);
+
+    slk_set(1, "Help", 1);
+    slk_set(2, "Menu", 1);
+    slk_set(3, "View", 1);
+    slk_set(4, "Edit", 1);
+    slk_set(5, "Copy", 1);
+    slk_set(6, "Mkdir", 1);
+    slk_set(7, "Delete", 1);
+    slk_set(8, "Quit", 1);
+    slk_refresh();
+
+    curs_set(0);
+
+    start_color();
+    init_pair(1, COLOR_WHITE, COLOR_BLUE);   // дефолтный цвет
+    init_pair(2, COLOR_BLACK, COLOR_CYAN);   // Выделенная директория или файл
+    init_pair(3, COLOR_YELLOW, COLOR_BLUE);  // Заголовки
 }
 MyWindow* createTable(int pos)
 {
-  MyWindow* myWin = malloc(sizeof(struct myWindow));
-  int sizeCol = COLS / 6;
-  WINDOW* win = newwin(LINES, COLS / 2, 0, pos);
-  WINDOW* nameWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol * 0);
-  WINDOW* sizeWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol * 1);
-  WINDOW* dateWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol* 2);
+    MyWindow* myWin = malloc(sizeof(struct myWindow));
+    int sizeCol = COLS / 6;
 
-      wbkgd(win, COLOR_PAIR(1));
+    WINDOW* win = newwin(LINES, COLS / 2, 0, pos);
+    WINDOW* nameWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol * 0);
+    WINDOW* sizeWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol * 1);
+    WINDOW* dateWin = subwin(win, LINES, sizeCol, 0, pos + sizeCol * 2);
+
+    wbkgd(win, COLOR_PAIR(1));
     wbkgd(nameWin, COLOR_PAIR(1));
     wbkgd(sizeWin, COLOR_PAIR(1));
     wbkgd(dateWin, COLOR_PAIR(1));
 
-  box(win, 0, 0);
-  wborder(sizeWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_TTEE, ACS_TTEE, ACS_BTEE, ACS_BTEE);
+    box(win, 0, 0);
+    wborder(sizeWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_TTEE, ACS_TTEE, ACS_BTEE, ACS_BTEE);
 
-      wattron(nameWin, COLOR_PAIR(3));
+    wattron(nameWin, COLOR_PAIR(3));
     mvwaddstr(nameWin, 1, 1, ".n");
     mvwaddstr(nameWin, 1, sizeCol / 2 - 1, "Name");
     wattroff(nameWin, COLOR_PAIR(3));
@@ -61,221 +72,114 @@ MyWindow* createTable(int pos)
     mvwaddstr(dateWin, 1, sizeCol / 2 - 1, "Date");
     wattroff(dateWin, COLOR_PAIR(3));
 
-  myWin->win = win;
-  myWin->subWins[0] = nameWin;
-  myWin->subWins[1] = sizeWin;
-  myWin->subWins[2] = dateWin;
+    myWin->win = win;
+    myWin->subWins[0] = nameWin;
+    myWin->subWins[1] = sizeWin;
+    myWin->subWins[2] = dateWin;
 
-  refresh();
-  wrefresh(win);
-  return myWin;
+    refresh();
+    refreshMyWindow(myWin);
+    return myWin;
 }
-void initMc()
+int wprintDir(MyWindow* myWin, struct dirent*** namelist, char* path)
 {
+    int n = scandir(path, namelist, 0, alphasort);
+    if (n < 0)
+    {
+        perror("Can not scan dir");
+        fprintf(stderr, "errno: %d\n", errno);
+        return -1;
+    }
 
-  ripoffline(-1,status);
-  slk_init(1);
-  initscr();
+    clearMyWin(myWin);
 
-  cbreak();
-  noecho();
-  keypad(stdscr, TRUE);
-  notimeout(stdscr, 0);
+    struct stat fileInfo;
+    char pathToFile[PATH_MAX];
+    char time_str[20];
+    int offset = 2;
+    for (int i = 0; i < n; i++)
+    {
+        if (strcmp((*namelist)[i]->d_name, ".") == 0)
+        {
+            continue;
+        }
 
-  slk_set(1, "Help", 1);
-  slk_set(2, "Menu", 1);
-  slk_set(3, "View", 1);
-  slk_set(4, "Edit", 1);
-  slk_set(5, "Copy", 1);
-  slk_set(6, "Mkdir", 1);
-  slk_set(7, "Delete", 1);
-  slk_set(8, "Quit", 1);
-  slk_refresh();
+        snprintf(pathToFile, sizeof(pathToFile), "%s/%s", path, (*namelist)[i]->d_name);
+        strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M", localtime(&fileInfo.st_ctime));
 
-  curs_set(0);
-
-  start_color();
-  init_pair(1, COLOR_WHITE, COLOR_BLUE); // дефолтный цвет
-  init_pair(2, COLOR_BLACK, COLOR_CYAN); //Выделенная директория или файл
-  init_pair(3, COLOR_YELLOW, COLOR_BLUE); //Заголовки
-}
-int highlightFile(MyWindow* activeWin, int y, int x)
-{
-	int width = 0;
-  for(int i =0;i< COUNT_SUBWINS; i++ )
-  {  
-	  width = getmaxx(activeWin->subWins[i]) - 2;
-    wchgat(activeWin->subWins[i], width,A_NORMAL,1,NULL);//затираем предыдущую
-    wmove(activeWin->subWins[i],y,x+1);
-    wchgat(activeWin->subWins[i], width,A_NORMAL,2,NULL);
-    wrefresh(activeWin->subWins[i]);
-  }
-  return 0;
+        mvwprintw(myWin->subWins[0], offset, 1, "%s", (*namelist)[i]->d_name);
+        if (stat(pathToFile, &fileInfo) == 0)
+        {
+            mvwprintw(myWin->subWins[1], offset, 1, "%ld", (long)fileInfo.st_size);
+            mvwprintw(myWin->subWins[2], offset, 1, "%s", time_str);
+        }
+        else
+        {
+            perror("stat");
+        }
+        offset++;
+    }
+    return n;
 }
 int dehighlightFile(MyWindow* activeWin)
 {
-	int width = 0;
-  for(int i =0;i< COUNT_SUBWINS; i++ )
-  {  
-	  width = getmaxx(activeWin->subWins[i]) - 2;
-    wchgat(activeWin->subWins[i], width,A_NORMAL,1,NULL);//затираем предыдущую
-    wrefresh(activeWin->subWins[i]);
-  }
-  return 0;
+    int width = 0;
+    for (int i = 0; i < COUNT_SUBWINS; i++)
+    {
+        width = getmaxx(activeWin->subWins[i]) - 2;
+        wchgat(activeWin->subWins[i], width, A_NORMAL, 1, NULL);  // затираем предыдущую
+        wrefresh(activeWin->subWins[i]);
+    }
+    box(activeWin->win, 0, 0);
+    wborder(activeWin->subWins[1], ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_TTEE, ACS_TTEE, ACS_BTEE, ACS_BTEE);
+    refreshMyWindow(activeWin);
+    return 0;
+}
+int highlightFile(MyWindow* activeWin, int y, int x)
+{
+
+    int width = 0;
+    dehighlightFile(activeWin);
+    for (int i = 0; i < COUNT_SUBWINS; i++)
+    {
+        int width = getmaxx(activeWin->subWins[i]) - 2;
+        mvwchgat(activeWin->subWins[i], y, 1, width, A_REVERSE, 1, NULL);
+        wrefresh(activeWin->subWins[i]);
+    }
+    return 0;
 }
 void refreshMyWindow(MyWindow* win)
 {
-	refresh();
-	wrefresh(win->win);
-	wrefresh(win->subWins[0]);
-	wrefresh(win->subWins[1]);
-	wrefresh(win->subWins[2]);
+    refresh();
+    wrefresh(win->win);
+    wrefresh(win->subWins[0]);
+    wrefresh(win->subWins[1]);
+    wrefresh(win->subWins[2]);
 }
 void clearMyWin(MyWindow* myWin)
 {
-  int start_line = 2;
-  for (int i = start_line; i < LINES; i++)
-  {
-    wmove(myWin->subWins[0], i, 1);
-    wclrtoeol(myWin->subWins[0]);
+    int start_line = 2;
+    for (int i = start_line; i < LINES; i++)
+    {
+        wmove(myWin->subWins[0], i, 1);
+        wclrtoeol(myWin->subWins[0]);
 
-    wmove(myWin->subWins[1], i, 1);
-    int width = getmaxx(myWin->subWins[1]) - 3;
-    whline(myWin->subWins[1], ' ', width);
+        wmove(myWin->subWins[1], i, 1);
+        whline(myWin->subWins[1], ' ', getmaxx(myWin->subWins[1]));
 
-    wmove(myWin->subWins[2], i, 0);
-    wclrtoeol(myWin->subWins[2]);
-  }
-  box(myWin->win, 0, 0);
-  wborder(myWin->subWins[1], ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_TTEE, ACS_TTEE, ACS_BTEE, ACS_BTEE);
- refreshMyWindow(myWin);
+        wmove(myWin->subWins[2], i, 0);
+        wclrtoeol(myWin->subWins[2]);
+    }
+    box(myWin->win, 0, 0);
+    wborder(myWin->subWins[1], ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_TTEE, ACS_TTEE, ACS_BTEE, ACS_BTEE);
+    refreshMyWindow(myWin);
 }
-int wprintDir(MyWindow* myWin,struct dirent ***namelist, char* path)
+void freeNamelist(struct dirent** namelist, int count)
 {
-  int n = scandir(path, namelist, 0, alphasort);
-  if(n < 0)
-  {
-    perror("Can not scan dir");
-    fprintf(stderr, "errno: %d\n", errno);
-    return -1;
-  }  
-
-  clearMyWin(myWin);
-
-  struct stat fileInfo;
-  char pathToFile[PATH_MAX];
-  int offset = 2;
-  int i = 0;
-  for( i = 0; i < n; i++)
-  {
-    if(strcmp((*namelist)[i]->d_name, ".")==0)
-    {
-      continue;
-    }
-    snprintf(pathToFile, sizeof(pathToFile), "%s/%s", path, (*namelist)[i]->d_name);
-
-    mvwprintw(myWin->subWins[0],  offset, 1, "%s",(*namelist)[i]->d_name);
-    if (stat(pathToFile, &fileInfo) == 0)
-    {
-      mvwprintw(myWin->subWins[1], offset, 1, "%ld", (long)fileInfo.st_size);
-      mvwprintw(myWin->subWins[2], offset, 1, "%s", ctime(&fileInfo.st_ctime));
-    } 
-    else
-    {
-      perror("stat");
-    }
-    offset++;
-  }
-  return i;
-}
-void freeNamelist(struct dirent **namelist, int count) {
     if (!namelist) return;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++)
+    {
         free(namelist[i]);
     }
     free(namelist);
 }
-int main()
-{
-  initMc();
-
-  MyWindow* left = createTable(0);
-  MyWindow* right = createTable(COLS/2);
-  MyWindow* activeWin = left;
-  int countFiles = 0;
-  struct dirent **namelist = NULL;
-
-  countFiles = wprintDir(right,&namelist, ".");
-  countFiles = wprintDir(left,&namelist, ".");
-
-refreshMyWindow(left);
-refreshMyWindow(right);
-
-      char fullPath[PATH_MAX];
-      char currentPath[PATH_MAX];
-      getcwd(currentPath, sizeof(currentPath));
-
-  int x = 0;
-  int y = 2;
-  int ch;
-  bool exit = 0;
-  while (!exit)
-  {
-    highlightFile(activeWin, y, x);
-    refresh();
-    ch = getch();
-    if (ch == '\t')  // tab
-    {
-      changeStatus("Tab");
-      dehighlightFile(activeWin);
-      if(activeWin == left)
-      {
-        activeWin = right;
-      }
-      else
-      {
-        activeWin = left;
-      }
-  countFiles = wprintDir(activeWin,&namelist, ".");
-    }
-    else if (ch == 'w' ||ch == 'k' || ch == KEY_UP)  // up
-    {
-      changeStatus("Up");
-      if(y>2)
-      y--;
-    }
-    else if (ch == 's' || ch == 'j' ||  ch == KEY_DOWN)  // down
-    {
-      changeStatus("Down");
-      if(y < countFiles)
-      y++;
-    }
-    else if (ch == '\n' || ch == '\r')  // enter
-    {
-      changeStatus("Enter");
-snprintf(fullPath, sizeof(fullPath), "%s/%s", currentPath, namelist[y-1]->d_name);
-      if (namelist[y-1]->d_type == DT_DIR)
-      {
-        freeNamelist(namelist, countFiles);
-        countFiles = wprintDir(activeWin, &namelist, fullPath);
-        strcpy(currentPath, fullPath);
-      }
-      else
-      {
-changeStatus("It is file");
-      }
-    }
-    else if (ch == 'q' || ch == 27)  // escape
-    {
-      exit = 1;
-    }
-    else
-    {
-      changeStatus("Unknow symbol");
-    }
-  }
-
-  endwin();
-  return 0;
-}
-
