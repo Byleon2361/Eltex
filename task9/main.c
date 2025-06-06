@@ -1,4 +1,5 @@
 #include "mc.h"
+
 int main()
 {
     initMc();
@@ -10,17 +11,14 @@ int main()
     int countFiles = 0;
     int countPrevFiles = 0;
     int countTempFiles = 0;
-    struct dirent** namelist = NULL;
 
-    countPrevFiles = wprintDir(right, &namelist, ".", 0);
-    countFiles = wprintDir(left, &namelist, ".",0);
+    countPrevFiles = wprintDir(right, ".", 0);
+    countFiles = wprintDir(left, ".", 0);
 
     refreshMyWindow(left);
     refreshMyWindow(right);
 
     char fullPath[PATH_MAX];
-    char leftPath[PATH_MAX];
-    char rigthPath[PATH_MAX];
     char currentPath[PATH_MAX];
     char prevPath[PATH_MAX];
     char tempPath[PATH_MAX];
@@ -32,21 +30,26 @@ int main()
     int offsetVisibleArea = 0;
     int ch;
     bool exit = 0;
+
     while (!exit)
     {
         highlightFile(activeWin, y, x);
         refresh();
         ch = getch();
+
         if (ch == '\t')  // tab
         {
             changeStatus("Tab");
             dehighlightFile(activeWin);
 
-                strcpy(tempPath,prevPath);
-                strcpy(prevPath,currentPath);
+            strcpy(tempPath, prevPath);
+            strcpy(prevPath, currentPath);
+            strcpy(currentPath, tempPath);
 
-              countTempFiles = countPrevFiles;
-              countPrevFiles = countFiles;
+            countTempFiles = countPrevFiles;
+            countPrevFiles = countFiles;
+            countFiles = countTempFiles;
+
             if (activeWin == left)
             {
                 activeWin = right;
@@ -56,59 +59,80 @@ int main()
                 activeWin = left;
             }
 
-            countFiles = countTempFiles;
-
             if (y > 2 + countFiles - 1)
             {
-              y = (countFiles > 0) ? 2 + countFiles - 2 : 2;
+                y = (countFiles > 0) ? 2 + countFiles - 2 : 2;
             }
-            strcpy(currentPath, tempPath);
         }
         else if (ch == 'w' || ch == 'k' || ch == KEY_UP)  // up
         {
             changeStatus("Up");
-            if (y > 2) y--;
-            else if(offsetVisibleArea > 0)
+            if (y > 2)
+                y--;
+            else if (offsetVisibleArea > 0)
             {
-              offsetVisibleArea--;
-              y = 2;
-              wprintDir(activeWin, &namelist, currentPath, offsetVisibleArea);
+                offsetVisibleArea--;
+                y = 2;
+                countFiles = wprintDir(activeWin, currentPath, offsetVisibleArea);
             }
         }
         else if (ch == 's' || ch == 'j' || ch == KEY_DOWN)  // down
         {
             changeStatus("Down");
-            int widthVisibleArea = LINES-3;
-            if(y<2+widthVisibleArea - 1 && y < countFiles)
+            int widthVisibleArea = LINES - 3;
+            if (y < 2 + widthVisibleArea - 1 && y < countFiles)
             {
-              y++;
+                y++;
             }
             else if (offsetVisibleArea + widthVisibleArea < countFiles)
             {
-              offsetVisibleArea++;
-              wprintDir(activeWin, &namelist, currentPath, offsetVisibleArea);
+                offsetVisibleArea++;
+                countFiles = wprintDir(activeWin, currentPath, offsetVisibleArea);
             }
         }
         else if (ch == '\n' || ch == '\r')  // enter
         {
             changeStatus("Enter");
+
+            struct dirent** namelist = NULL;
+            int n = scandir(currentPath, &namelist, 0, alphasort);
+            if (n < 0)
+            {
+                changeStatus("Scan dir error");
+                continue;
+            }
+
+            if (y - 1 >= n)
+            {
+                freeNamelist(namelist, n);
+                changeStatus("Invalid selection");
+                continue;
+            }
+
             snprintf(fullPath, sizeof(fullPath), "%s/%s", currentPath, namelist[y - 1]->d_name);
+
             if (strlen(fullPath) > PATH_MAX)
             {
+                freeNamelist(namelist, n);
                 changeStatus("Path too long");
                 continue;
             }
 
             if (namelist[y - 1]->d_type == DT_DIR)
             {
-                freeNamelist(namelist, countFiles);
-                countFiles = wprintDir(activeWin, &namelist, fullPath, offsetVisibleArea);
+                strcpy(prevPath, currentPath);
+                countPrevFiles = countFiles;
+
+                countFiles = wprintDir(activeWin, fullPath, 0);
                 strcpy(currentPath, fullPath);
+                offsetVisibleArea = 0;
+                y = 2;
             }
             else
             {
                 changeStatus("It is file");
             }
+            freeNamelist(namelist, n);
         }
         else if (ch == 'q' || ch == 27)  // escape
         {
@@ -116,10 +140,16 @@ int main()
         }
         else
         {
-            changeStatus("Unknow symbol");
+            changeStatus("Unknown symbol");
         }
     }
 
+    destroyMyWindow(left);
+    destroyMyWindow(right);
+
+    clear();
+    refresh();
     endwin();
+
     return 0;
 }

@@ -1,4 +1,4 @@
-#ifndef MC_H 
+#ifndef MC_H
 #define MC_H
 
 #include <linux/limits.h>
@@ -29,11 +29,11 @@ int status(WINDOW* win, int cols);
 void changeStatus(char* str);
 void initMc();
 MyWindow* createTable(int pos);
-int wprintDir(MyWindow* myWin, struct dirent*** namelist, char* path, int startVisibleAre);
+int wprintDir(MyWindow* myWin, char* path, int startVisibleAre);
 int dehighlightFile(MyWindow* activeWin);
 int highlightFile(MyWindow* activeWin, int y, int x);
 void refreshMyWindow(MyWindow* win);
 void clearMyWin(MyWindow* myWin);
 void freeNamelist(struct dirent** namelist, int count);
-
+void destroyMyWindow(MyWindow* win);
 #endif

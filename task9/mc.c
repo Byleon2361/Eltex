@@ -81,9 +81,10 @@ MyWindow* createTable(int pos)
     refreshMyWindow(myWin);
     return myWin;
 }
-int wprintDir(MyWindow* myWin, struct dirent*** namelist, char* path, int startVisibleArea)
+int wprintDir(MyWindow* myWin, char* path, int startVisibleArea)
 {
-    int n = scandir(path, namelist, 0, alphasort);
+    struct dirent** namelist = NULL;
+    int n = scandir(path, &namelist, 0, alphasort);
     if (n < 0)
     {
         perror("Can not scan dir");
@@ -97,33 +98,33 @@ int wprintDir(MyWindow* myWin, struct dirent*** namelist, char* path, int startV
     char pathToFile[PATH_MAX];
     char time_str[20];
     int offset = 2;
-    int widthVisibleArea = LINES -3;
+    int widthVisibleArea = LINES - 3;
     int endVisivleArea = startVisibleArea + widthVisibleArea;
-    if(endVisivleArea > n)
-      endVisivleArea = n;
-    
+    if (endVisivleArea > n) endVisivleArea = n;
+
     for (int i = startVisibleArea; i < endVisivleArea; i++)
     {
-        if (strcmp((*namelist)[i]->d_name, ".") == 0)
+        if (strcmp(namelist[i]->d_name, ".") == 0)
         {
             continue;
         }
 
-        snprintf(pathToFile, sizeof(pathToFile), "%s/%s", path, (*namelist)[i]->d_name);
-        strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M", localtime(&fileInfo.st_ctime));
-
-        mvwprintw(myWin->subWins[0], offset, 1, "%s", (*namelist)[i]->d_name);
-        if (stat(pathToFile, &fileInfo) == 0)
-        {
-            mvwprintw(myWin->subWins[1], offset, 1, "%ld", (long)fileInfo.st_size);
-            mvwprintw(myWin->subWins[2], offset, 1, "%s", time_str);
-        }
-        else
+        snprintf(pathToFile, sizeof(pathToFile), "%s/%s", path, namelist[i]->d_name);
+        if (stat(pathToFile, &fileInfo) != 0)
         {
             perror("stat");
+            continue;
         }
+
+        strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M", localtime(&fileInfo.st_ctime));
+
+        mvwprintw(myWin->subWins[0], offset, 1, "%s", namelist[i]->d_name);
+        mvwprintw(myWin->subWins[1], offset, 1, "%ld", (long)fileInfo.st_size);
+        mvwprintw(myWin->subWins[2], offset, 1, "%s", time_str);
+
         offset++;
     }
+    freeNamelist(namelist, n);
     return n;
 }
 int dehighlightFile(MyWindow* activeWin)
@@ -187,4 +188,13 @@ void freeNamelist(struct dirent** namelist, int count)
         free(namelist[i]);
     }
     free(namelist);
+}
+void destroyMyWindow(MyWindow* win)
+{
+    if (!win) return;
+    delwin(win->subWins[0]);
+    delwin(win->subWins[1]);
+    delwin(win->subWins[2]);
+    delwin(win->win);
+    free(win);
 }
