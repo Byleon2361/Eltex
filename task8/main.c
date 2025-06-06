@@ -1,47 +1,37 @@
-#include "src/libcalc.h"
 #include <stdio.h>
-
-void inputNumbers(int* first, int* second)
+#include <dirent.h>
+#include <regex.h>
+#include <stdlib.h>
+#define REG_EX ".so$"
+int mySelector(const struct dirent *dirent)
 {
-    printf("Введите первое число\n");
-    scanf("%d", first);
-    printf("Введите второе число\n");
-    scanf("%d", second);
+  char* regExStr = REG_EX;
+  regex_t regEx;
+
+  if(regcomp(&regEx, regExStr, REG_EXTENDED)!=0)
+  {
+    perror("Не удалось скомпилировать регулярное выражение\n");
+    return 0;
+  }
+  int isRegular = regexec(&regEx, dirent->d_name, 0, NULL, 0);
+
+regfree(&regEx);
+  return (isRegular == 0);
 }
 int main()
 {
-    int number = 0;
+  struct dirent** dirent = NULL;
+  int n = 0;
+  n = scandir(".", &dirent, mySelector, 0);
 
-    int first = 0;
-    int second = 0;
-
-    while (number != 5)
-    {
-
-        printf("1)Сложени\n2)Вычитание\n3)Умножение\n4)Деление\n5)Выход\n");
-        scanf("%d", &number);
-        switch (number)
-        {
-            case 1:
-
-                inputNumbers(&first, &second);
-                printf("Результат сложения: %d\n", myAdd(first, second));
-                break;
-            case 2:
-                inputNumbers(&first, &second);
-                printf("Результат вычитания: %d\n", mySub(first, second));
-                break;
-            case 3:
-                inputNumbers(&first, &second);
-                printf("Результат умножения: %d\n", myMul(first, second));
-                break;
-            case 4:
-                inputNumbers(&first, &second);
-                printf("Результат деления: %d\n", myDiv(first, second));
-                break;
-            case 5: break;
-            default: printf("Неверный номер"); break;
-        }
-    }
-    return 0;
+  for(int i = 0 ; i < n; i++)
+  {
+    printf("%s\n", dirent[i]->d_name);
+  }
+  for(int i = 0 ; i < n; i++)
+  {
+    free(dirent[i]);
+  }
+  free(dirent);
+  return 0;
 }

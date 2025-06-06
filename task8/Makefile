@@ -12,18 +12,27 @@ mul.o:
 div.o:
 	gcc -fPIC -c ./src/div.c
 
-libcalc.so: add.o sub.o mul.o div.o
-	gcc -shared -o libcalc.so $^
+libdiv.so: div.o
+	gcc -shared -o libdiv.so $^
+
+libadd.so: add.o 
+	gcc -shared -o libadd.so $^
+
+libsub.so: sub.o
+	gcc -shared -o libsub.so $^
+
+libmul.so: mul.o
+	gcc -shared -o libmul.so $^
 
 main.o:
 	gcc -c main.c
 
 
-app: libcalc.so main.o
-	gcc main.o -L. -lcalc -o app -Wl,-rpath=.
+app: libdiv.so libadd.so libsub.so libmul.so main.o
+	gcc main.o -L. -ladd -lsub -lmul -ldiv -o app -Wl,-rpath=.
 
 run:
 	./app
 
 clean:
-	rm app add.o sub.o mul.o div.o libcalc.so
+	rm -f app *.o *.so
