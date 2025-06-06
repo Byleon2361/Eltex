@@ -1,4 +1,5 @@
 #include "mc.h"
+#include <ncurses.h>
 
 int main()
 {
@@ -39,6 +40,7 @@ int main()
 
         if (ch == '\t')  // tab
         {
+
             changeStatus("Tab");
             dehighlightFile(activeWin);
 
@@ -92,6 +94,7 @@ int main()
         }
         else if (ch == '\n' || ch == '\r')  // enter
         {
+
             changeStatus("Enter");
 
             struct dirent** namelist = NULL;
@@ -120,9 +123,6 @@ int main()
 
             if (namelist[y - 1]->d_type == DT_DIR)
             {
-                strcpy(prevPath, currentPath);
-                countPrevFiles = countFiles;
-
                 countFiles = wprintDir(activeWin, fullPath, 0);
                 strcpy(currentPath, fullPath);
                 offsetVisibleArea = 0;
@@ -131,6 +131,11 @@ int main()
             else
             {
                 changeStatus("It is file");
+                if (execl("/usr/bin/vim", "vim", fullPath, (char*)NULL) == -1)
+                {
+                    perror("vim");
+                    return 1;
+                }
             }
             freeNamelist(namelist, n);
         }
@@ -147,9 +152,11 @@ int main()
     destroyMyWindow(left);
     destroyMyWindow(right);
 
+    delwin(statusWin);
+    slk_restore();
+    resetty();
     clear();
     refresh();
     endwin();
-
     return 0;
 }

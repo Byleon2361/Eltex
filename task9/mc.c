@@ -37,7 +37,7 @@ void initMc()
     curs_set(0);
 
     start_color();
-    init_pair(1, COLOR_WHITE, COLOR_BLUE);   // дефолтный цвет
+    init_pair(1, COLOR_WHITE, COLOR_BLUE);   // Дефолтный цвет
     init_pair(2, COLOR_BLACK, COLOR_CYAN);   // Выделенная директория или файл
     init_pair(3, COLOR_YELLOW, COLOR_BLUE);  // Заголовки
 }
@@ -99,10 +99,10 @@ int wprintDir(MyWindow* myWin, char* path, int startVisibleArea)
     char time_str[20];
     int offset = 2;
     int widthVisibleArea = LINES - 3;
-    int endVisivleArea = startVisibleArea + widthVisibleArea;
-    if (endVisivleArea > n) endVisivleArea = n;
+    int endVisibleArea = startVisibleArea + widthVisibleArea;
+    if (endVisibleArea > n) endVisibleArea = n;
 
-    for (int i = startVisibleArea; i < endVisivleArea; i++)
+    for (int i = startVisibleArea; i < endVisibleArea; i++)
     {
         if (strcmp(namelist[i]->d_name, ".") == 0)
         {
@@ -110,11 +110,6 @@ int wprintDir(MyWindow* myWin, char* path, int startVisibleArea)
         }
 
         snprintf(pathToFile, sizeof(pathToFile), "%s/%s", path, namelist[i]->d_name);
-        if (stat(pathToFile, &fileInfo) != 0)
-        {
-            perror("stat");
-            continue;
-        }
 
         strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M", localtime(&fileInfo.st_ctime));
 
@@ -133,7 +128,7 @@ int dehighlightFile(MyWindow* activeWin)
     for (int i = 0; i < COUNT_SUBWINS; i++)
     {
         width = getmaxx(activeWin->subWins[i]) - 2;
-        wchgat(activeWin->subWins[i], width, A_NORMAL, 1, NULL);  // затираем предыдущую
+        wchgat(activeWin->subWins[i], width, A_NORMAL, 1, NULL);
         wrefresh(activeWin->subWins[i]);
     }
     box(activeWin->win, 0, 0);
