@@ -111,6 +111,11 @@ int wprintDir(MyWindow* myWin, char* path, int startVisibleArea)
 
         snprintf(pathToFile, sizeof(pathToFile), "%s/%s", path, namelist[i]->d_name);
 
+        if (stat(pathToFile, &fileInfo) != 0)
+        {
+            perror("stat");
+            continue;
+        }
         strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M", localtime(&fileInfo.st_ctime));
 
         mvwprintw(myWin->subWins[0], offset, 1, "%s", namelist[i]->d_name);

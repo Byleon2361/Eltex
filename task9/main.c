@@ -123,6 +123,7 @@ int main()
 
             if (namelist[y - 1]->d_type == DT_DIR)
             {
+
                 countFiles = wprintDir(activeWin, fullPath, 0);
                 strcpy(currentPath, fullPath);
                 offsetVisibleArea = 0;
