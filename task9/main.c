@@ -1,59 +1,50 @@
 #include "mc.h"
 #include <ncurses.h>
 
-/* void tab() */
-/* { */
-/*   changeStatus("Tab"); */
-/*   dehighlightFile(activeWin); */
+MyWindow* tab(MyWindow* activeWin, MyWindow* left, MyWindow* right, int* y)
+{
+  changeStatus("Tab");
+  dehighlightFile(activeWin);
 
-/*   strcpy(tempPath, prevPath); */
-/*   strcpy(prevPath, currentPath); */
-/*   strcpy(currentPath, tempPath); */
+  if (activeWin == left)
+  {
+    activeWin = right;
+  }
+  else
+  {
+    activeWin = left;
+  }
 
-/*   countTempFiles = countPrevFiles; */
-/*   countPrevFiles = countFiles; */
-/*   countFiles = countTempFiles; */
-
-/*   if (activeWin == left) */
-/*   { */
-/*     activeWin = right; */
-/*   } */
-/*   else */
-/*   { */
-/*     activeWin = left; */
-/*   } */
-
-/*   if (y > 2 + countFiles - 1) */
-/*   { */
-/*     y = (countFiles > 0) ? 2 + countFiles - 2 : 2; */
-/*   } */
-/* } */
-/* void up(MyWindow* activeWin, char* currentPath) */
-/* { */
-/*   changeStatus("Up"); */
-/*   if (y > 2) */
-/*     y--; */
-/*   else if (offsetVisibleArea > 0) */
-/*   { */
-/*     offsetVisibleArea--; */
-/*     y = 2; */
-/*     countFiles = wprintDir(activeWin, currentPath, offsetVisibleArea); */
-/*   } */
-/* } */
-/* void down(MyWindow* activeWin, char* currentPath) */
-/* { */
-/*   changeStatus("Down"); */
-/*   int widthVisibleArea = LINES - 3; */
-/*   if (y < 2 + widthVisibleArea - 1 && y < countFiles) */
-/*   { */
-/*     y++; */
-/*   } */
-/*   else if (offsetVisibleArea + widthVisibleArea < countFiles) */
-/*   { */
-/*     offsetVisibleArea++; */
-/*     countFiles = wprintDir(activeWin, currentPath, offsetVisibleArea); */
-/*   } */
-/* } */
+  if (*y > 2 + activeWin->countFiles - 1)
+  {
+    *y = (activeWin->countFiles > 0) ? 2 + activeWin->countFiles - 2 : 2;
+  }
+  return activeWin;
+}
+void up(MyWindow* activeWin,int *y, int* offsetVisibleArea)
+{
+  changeStatus("Up");
+  if (*y > 2)
+    (*y)--;
+  else if (*offsetVisibleArea > 0)
+  {
+    (*offsetVisibleArea)--;
+    *y = 2;
+  }
+}
+void down(MyWindow* activeWin,int *y, int* offsetVisibleArea)
+{
+  changeStatus("Down");
+  int widthVisibleArea = LINES - 3;
+  if (*y < 2 + widthVisibleArea - 1 && *y < activeWin->countFiles)
+  {
+    (*y)++;
+  }
+  else if (*offsetVisibleArea + widthVisibleArea < activeWin->countFiles)
+  {
+    (*offsetVisibleArea)++;
+  }
+}
 int enter(MyWindow* activeWin, int* y,int* offsetVisibleArea )
 {
   char fullPath[PATH_MAX];
@@ -126,26 +117,27 @@ int main()
     wprintDir(activeWin, offsetVisibleArea);
     highlightFile(activeWin, y, x);
     refreshMyWindow(activeWin);
-    refresh();
 
     ch = getch();
 
     if (ch == '\t')  // tab
     {
+      activeWin = tab(activeWin, left, right, &y);
     }
     else if (ch == 'w' || ch == 'k' || ch == KEY_UP)  // up
     {
+      up(activeWin, &y, &offsetVisibleArea);
     }
     else if (ch == 's' || ch == 'j' || ch == KEY_DOWN)  // down
     {
+      down(activeWin, &y, &offsetVisibleArea);
     }
     else if (ch == '\n' || ch == '\r')  // enter
     {
       if(enter(activeWin, &y, &offsetVisibleArea) > 0)
       {
-        fprintf(stderr, "Ошибка ввода\n");
-        freeNamelist(left->dir,left->countFiles);
-        freeNamelist(right->dir, right->countFiles);
+        fprintf(stderr, "Error enter\n");
+        break;
       }
     }
     else if (ch == 'q' || ch == 27)  // escape

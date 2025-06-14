@@ -79,6 +79,10 @@ MyWindow* createTable(int pos)
 
     refresh();
     refreshMyWindow(myWin);
+
+    myWin->dir = NULL;
+    myWin->countFiles = 0;
+
     return myWin;
 }
 int writePathInMyWindow(MyWindow* myWin, char *path)
@@ -168,11 +172,11 @@ int highlightFile(MyWindow* activeWin, int y, int x)
 }
 void refreshMyWindow(MyWindow* win)
 {
-    refresh();
     wrefresh(win->win);
     wrefresh(win->subWins[0]);
     wrefresh(win->subWins[1]);
     wrefresh(win->subWins[2]);
+    refresh();
 }
 void clearMyWin(MyWindow* myWin)
 {
@@ -203,6 +207,10 @@ void freeNamelist(struct dirent** namelist, int count)
 }
 void destroyMyWindow(MyWindow* win)
 {
+  if(win->dir != NULL)
+  {
+    freeNamelist(win->dir, win->countFiles);
+  }
     if (!win) return;
     delwin(win->subWins[0]);
     delwin(win->subWins[1]);
