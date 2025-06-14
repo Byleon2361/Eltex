@@ -1,5 +1,6 @@
 #include "mc.h"
 #include <ncurses.h>
+#include <sys/wait.h>
 
 MyWindow* tab(MyWindow* activeWin, MyWindow* left, MyWindow* right, int* y)
 {
@@ -45,6 +46,32 @@ void down(MyWindow* activeWin,int *y, int* offsetVisibleArea)
     (*offsetVisibleArea)++;
   }
 }
+void execProg(char* fullPath)
+{
+  pid_t pid = fork();
+  if (pid == 0)
+  {
+    if (execl(fullPath, fullPath, (char*)NULL) < 0)
+    {
+      perror("Failed to execute program");
+    }
+    exit(0);
+  }
+  wait(NULL);
+}
+void openFileInVim(char* fullPath)
+{
+  pid_t pid = fork();
+  if (pid == 0)
+  {
+    if (execl("/usr/bin/vim", "vim", fullPath, (char*)NULL) < 0)
+    {
+      perror("Failed to open vim");
+    }
+    exit(0);
+  }
+  wait(NULL);
+}
 int enter(MyWindow* activeWin, int* y,int* offsetVisibleArea )
 {
   char fullPath[PATH_MAX];
@@ -58,7 +85,6 @@ int enter(MyWindow* activeWin, int* y,int* offsetVisibleArea )
   }
 
   snprintf(fullPath, sizeof(fullPath), "%s/%s", activeWin->path, activeWin->dir[*y - 1]->d_name);
-fprintf(stderr, "%s", fullPath);//для отладки
   if (strlen(fullPath) > PATH_MAX)
   {
     changeStatus("Path too long");
@@ -74,10 +100,13 @@ fprintf(stderr, "%s", fullPath);//для отладки
   else
   {
     changeStatus("It is file");
-    if (execl("/usr/bin/vim", "vim", fullPath, (char*)NULL) == -1)
+    if (access(fullPath, X_OK) == 0) 
     {
-      perror("vim");
-      return 1;
+      execProg(fullPath);
+    }
+    else
+    {
+      openFileInVim(fullPath);
     }
   }
   return 0;

@@ -104,7 +104,8 @@ int writePathInMyWindow(MyWindow* myWin, char *path)
         return -1;
     }
     myWin->dir = dir;
-  strncpy(myWin->path, path, PATH_MAX);
+  /* strncpy(myWin->path, path, PATH_MAX); */
+    realpath(path, myWin->path);
     myWin->countFiles = n;
     return n;
 }
