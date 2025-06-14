@@ -21,6 +21,9 @@ typedef struct myWindow
 {
     WINDOW* win;
     WINDOW* subWins[COUNT_SUBWINS];
+    struct dirent **dir;
+    char path[PATH_MAX];
+    int countFiles;
 } MyWindow;
 
 extern WINDOW* statusWin;
@@ -29,7 +32,8 @@ int status(WINDOW* win, int cols);
 void changeStatus(char* str);
 void initMc();
 MyWindow* createTable(int pos);
-int wprintDir(MyWindow* myWin, char* path, int startVisibleAre);
+int writePathInMyWindow(MyWindow* myWin, char *path);
+void wprintDir(MyWindow* myWin,int startVisibleAre);
 int dehighlightFile(MyWindow* activeWin);
 int highlightFile(MyWindow* activeWin, int y, int x);
 void refreshMyWindow(MyWindow* win);
