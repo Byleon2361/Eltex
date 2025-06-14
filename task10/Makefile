@@ -12,11 +12,14 @@ app2: secondTask.o
 secondTask.o: secondTask.c
 	gcc -c secondTask.c
 
-app3: thirdTask.o
-	gcc -Wall -o app3 thirdTask.o
+app3: thirdTask.o thirdTaskMain.o
+	gcc -Wall -o app3 thirdTask.o thirdTaskMain.o
 
-thirdTask.o: thirdTask.c
+thirdTask.o: thirdTask.c thirdTask.h
 	gcc -c thirdTask.c
+
+thirdTaskMain.o: thirdTaskMain.c
+	gcc -c thirdTaskMain.c
 
 clean:
 	rm -rf app1 app2 app3 *.o
