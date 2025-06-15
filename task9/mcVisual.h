@@ -1,5 +1,5 @@
-#ifndef MC_H
-#define MC_H
+#ifndef MC_VISUAL_H
+#define MC_VISUAL_H
 
 #include <linux/limits.h>
 #include <stdio.h>

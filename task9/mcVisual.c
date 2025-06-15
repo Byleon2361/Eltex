@@ -1,4 +1,4 @@
-#include "mc.h"
+#include "mcVisual.h"
 WINDOW* statusWin = NULL;
 int status(WINDOW* win, int cols)
 {
