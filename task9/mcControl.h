@@ -8,5 +8,5 @@ void up(MyWindow* activeWin,int *y, int* offsetVisibleArea);
 void down(MyWindow* activeWin,int *y, int* offsetVisibleArea);
 void execProg(char* fullPath);
 void openFileInVim(char* fullPath);
-int enter(MyWindow* activeWin, int* y,int* offsetVisibleArea );
+int enter(MyWindow* activeWin, int* y,int* offsetVisibleArea);
 #endif

@@ -2,7 +2,7 @@
 #include "mcControl.h"
 MyWindow* tab(MyWindow* activeWin, MyWindow* left, MyWindow* right, int* y)
 {
-  changeStatus("Tab");
+  changeStatus("Tab\n");
   dehighlightFile(activeWin);
 
   if (activeWin == left)
@@ -22,7 +22,7 @@ MyWindow* tab(MyWindow* activeWin, MyWindow* left, MyWindow* right, int* y)
 }
 void up(MyWindow* activeWin,int *y, int* offsetVisibleArea)
 {
-  changeStatus("Up");
+  changeStatus("Up\n");
   if (*y > 2)
     (*y)--;
   else if (*offsetVisibleArea > 0)
@@ -33,7 +33,7 @@ void up(MyWindow* activeWin,int *y, int* offsetVisibleArea)
 }
 void down(MyWindow* activeWin,int *y, int* offsetVisibleArea)
 {
-  changeStatus("Down");
+  changeStatus("Down\n");
   int widthVisibleArea = LINES - 3;
   if (*y < 2 + widthVisibleArea - 1 && *y < activeWin->countFiles)
   {
@@ -62,6 +62,7 @@ void openFileInVim(char* fullPath)
   pid_t pid = fork();
   if (pid == 0)
   {
+    system("clear");
     if (execl("/usr/bin/vim", "vim", fullPath, (char*)NULL) < 0)
     {
       perror("Failed to open vim");
@@ -70,22 +71,22 @@ void openFileInVim(char* fullPath)
   }
   wait(NULL);
 }
-int enter(MyWindow* activeWin, int* y,int* offsetVisibleArea )
+int enter(MyWindow* activeWin, int* y,int* offsetVisibleArea)
 {
   char fullPath[PATH_MAX];
 
-  changeStatus("Enter");
+  changeStatus("Enter\n");
 
   if (*y - 1 >= activeWin->countFiles)
   {
-    changeStatus("Invalid selection");
+    changeStatus("Invalid selection\n");
     return 1;
   }
 
   snprintf(fullPath, sizeof(fullPath), "%s/%s", activeWin->path, activeWin->dir[*y - 1]->d_name);
   if (strlen(fullPath) > PATH_MAX)
   {
-    changeStatus("Path too long");
+    changeStatus("Path too long\n");
     return 1;
   }
 
@@ -97,7 +98,7 @@ int enter(MyWindow* activeWin, int* y,int* offsetVisibleArea )
   }
   else
   {
-    changeStatus("It is file");
+    changeStatus("It is file\n");
     if (access(fullPath, X_OK) == 0) 
     {
       execProg(fullPath);
