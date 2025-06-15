@@ -27,6 +27,7 @@ typedef struct myWindow
 } MyWindow;
 
 extern WINDOW* statusWin;
+extern SCREEN* s;
 
 int status(WINDOW* win, int cols);
 void changeStatus(char* str);

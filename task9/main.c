@@ -79,5 +79,6 @@ int main()
   clear();
   refresh();
   endwin();
+  delscreen(s);
   return 0;
 }

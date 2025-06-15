@@ -1,5 +1,6 @@
 #include "mcVisual.h"
 WINDOW* statusWin = NULL;
+SCREEN* s = NULL;
 int status(WINDOW* win, int cols)
 {
     statusWin = win;
@@ -17,7 +18,7 @@ void initMc()
 {
     ripoffline(-1, status);
     slk_init(1);
-    initscr();
+    s = newterm(NULL,stdout, stdin);
 
     cbreak();
     noecho();
@@ -104,7 +105,6 @@ int writePathInMyWindow(MyWindow* myWin, char *path)
         return -1;
     }
     myWin->dir = dir;
-  /* strncpy(myWin->path, path, PATH_MAX); */
     realpath(path, myWin->path);
     myWin->countFiles = n;
     return n;
@@ -173,10 +173,10 @@ int highlightFile(MyWindow* activeWin, int y, int x)
 }
 void refreshMyWindow(MyWindow* win)
 {
-    wrefresh(win->win);
     wrefresh(win->subWins[0]);
     wrefresh(win->subWins[1]);
     wrefresh(win->subWins[2]);
+    wrefresh(win->win);
     refresh();
 }
 void clearMyWin(MyWindow* myWin)
@@ -208,11 +208,11 @@ void freeNamelist(struct dirent** namelist, int count)
 }
 void destroyMyWindow(MyWindow* win)
 {
+    if (!win) return;
   if(win->dir != NULL)
   {
     freeNamelist(win->dir, win->countFiles);
   }
-    if (!win) return;
     delwin(win->subWins[0]);
     delwin(win->subWins[1]);
     delwin(win->subWins[2]);
