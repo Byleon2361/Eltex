@@ -15,42 +15,46 @@
 
 int shops[COUNT_SHOPS];
 FILE* outputFile; 
-pthread_mutex_t customerShopMutexes[COUNT_SHOPS] = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t loaderShopMutexes[COUNT_SHOPS] = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t shopMutexes[COUNT_SHOPS] = PTHREAD_MUTEX_INITIALIZER;
 int customerShopPtr = 0;
 int loaderShopPtr = 0;
 int stopLoader = 0;
 pthread_mutex_t stopLoaderMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t loaderPtrMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t customerPtrMutex = PTHREAD_MUTEX_INITIALIZER;
+
 void *customerFunc(void *args)
 {
   int* needPtr = (int *) args;
   int need = *needPtr;
   int took=0;
+  int currentShop;
   while(need > 0)
   {
+    pthread_mutex_lock(&customerPtrMutex);
+    currentShop = customerShopPtr;
+    if(++customerShopPtr >= COUNT_SHOPS)customerShopPtr = 0;
+    pthread_mutex_unlock(&customerPtrMutex);
 
-    pthread_mutex_lock(&customerShopMutexes[customerShopPtr]);
-    if(customerShopPtr < COUNT_SHOPS) customerShopPtr++;
-    else customerShopPtr = 0;
+    pthread_mutex_lock(&shopMutexes[currentShop]);
+    fprintf(stdout, "Customer: %ld, need before: %d, ", (long)pthread_self(), need);
+    fprintf(stdout, "shop: %d, products before: %d, ", currentShop, shops[currentShop]); 
 
-    fprintf(stdout, "I am customers %ld, i need %d, ", (long)pthread_self(), need);
-    fprintf(stdout, "i came into the shop %d, there was %d products, ", customerShopPtr, shops[customerShopPtr]); 
-
-    if(need >= shops[customerShopPtr]) {
-      took = shops[customerShopPtr];
-      need -= shops[customerShopPtr];
-      shops[customerShopPtr] = 0;
+    if(need >= shops[currentShop]) {
+      took = shops[currentShop];
+      need -= shops[currentShop];
+      shops[currentShop] = 0;
     }
     else
     {
       took = need;
-      shops[customerShopPtr] -= need;
+      shops[currentShop] -= need;
       need = 0;
     }
 
-    fprintf(stdout, "i took %d products, my need has become %d, shops products have become %d, i fell asleep for %d seconds\n\n", took, need, shops[customerShopPtr], SLEEP_TIME_CUSTOMER);
+    fprintf(stdout, "took: %d, need after: %d, products after: %d, sleep: %d sec\n\n", took, need, shops[currentShop], SLEEP_TIME_CUSTOMER);
 
-    pthread_mutex_unlock(&customerShopMutexes[customerShopPtr]);
+    pthread_mutex_unlock(&shopMutexes[currentShop]);
     sleep(SLEEP_TIME_CUSTOMER);
   }
 
@@ -58,6 +62,7 @@ void *customerFunc(void *args)
 }
 void *loaderFunc(void *args)
 {
+  int currentShop;
   int put=0;
   while(1)
   {
@@ -69,27 +74,29 @@ void *loaderFunc(void *args)
     }
       pthread_mutex_unlock(&stopLoaderMutex);
 
-    pthread_mutex_lock(&loaderShopMutexes[loaderShopPtr]);
-    if(loaderShopPtr < COUNT_SHOPS) loaderShopPtr++;
-    else loaderShopPtr = 0;
+    pthread_mutex_lock(&loaderPtrMutex);
+    currentShop = loaderShopPtr;
+    if(++loaderShopPtr >= COUNT_SHOPS) loaderShopPtr = 0;
+    pthread_mutex_unlock(&loaderPtrMutex);
 
-    fprintf(stdout, "I am loader %ld, ", (long)pthread_self());
-    fprintf(stdout, "i came into the shop %d, there was %d products, ", loaderShopPtr, shops[loaderShopPtr]); 
+    pthread_mutex_lock(&shopMutexes[currentShop]);
+    fprintf(stdout, "Loader %ld, ", (long)pthread_self());
+    fprintf(stdout, "shop %d, products before: %d, ", currentShop, shops[currentShop]); 
 
-    if((shops[loaderShopPtr]+ COUNT_NEWPRODUCTS) < MAX_COUNT_PRODUCTS)
+    if((shops[currentShop]+ COUNT_NEWPRODUCTS) < MAX_COUNT_PRODUCTS)
     {
       put = COUNT_NEWPRODUCTS;
-      shops[loaderShopPtr] += COUNT_NEWPRODUCTS;
+      shops[currentShop] += COUNT_NEWPRODUCTS;
     }
     else
     {
-      put = MAX_COUNT_PRODUCTS - shops[loaderShopPtr];
-      shops[loaderShopPtr] = MAX_COUNT_PRODUCTS;
+      put = MAX_COUNT_PRODUCTS - shops[currentShop];
+      shops[currentShop] = MAX_COUNT_PRODUCTS;
     }
 
-    fprintf(stdout, "i put %d products, shops products have become %d, i fell asleep for %d seconds\n\n", put, shops[loaderShopPtr], SLEEP_TIME_LOADER);
+    fprintf(stdout, "put: %d, products after: %d, sleep: %d sec\n\n", put, shops[currentShop], SLEEP_TIME_LOADER);
 
-    pthread_mutex_unlock(&loaderShopMutexes[loaderShopPtr]);
+    pthread_mutex_unlock(&shopMutexes[currentShop]);
     sleep(SLEEP_TIME_LOADER);
   }
 
@@ -131,7 +138,6 @@ int main()
   for(int i = 0; i < COUNT_CUSTOMER_THREADS; i++)
   {
     pthread_join(customers[i], NULL);
-  printf("------------------------------");
   }
 
   pthread_mutex_lock(&stopLoaderMutex);
