@@ -1,0 +1,214 @@
+Customer: 140276132886208, need before: 90422, shop: 0, products before: 8836, took: 8836, need after: 81586, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 0, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276124493504, need before: 56454, shop: 1, products before: 7608, took: 7608, need after: 48846, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, need before: 99669, shop: 2, products before: 9597, took: 9597, need after: 90072, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 1, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 81586, shop: 3, products before: 4806, took: 4806, need after: 76780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, need before: 48846, shop: 4, products before: 5652, took: 5652, need after: 43194, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, need before: 90072, shop: 0, products before: 5000, took: 5000, need after: 85072, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 2, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 3, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 76780, shop: 1, products before: 5000, took: 5000, need after: 71780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, need before: 43194, shop: 2, products before: 5000, took: 5000, need after: 38194, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 4, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276116100800, need before: 85072, shop: 3, products before: 5000, took: 5000, need after: 80072, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 0, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 71780, shop: 4, products before: 5000, took: 5000, need after: 66780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, need before: 38194, shop: 0, products before: 5000, took: 5000, need after: 33194, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 1, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276116100800, need before: 80072, shop: 1, products before: 5000, took: 5000, need after: 75072, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 2, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 66780, shop: 2, products before: 5000, took: 5000, need after: 61780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, shop: 3, shop is empty
+
+Customer: 140276116100800, shop: 4, shop is empty
+
+Loader 140276107708096, shop 3, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 4, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, shop: 0, shop is empty
+
+Customer: 140276124493504, shop: 1, shop is empty
+
+Customer: 140276116100800, shop: 2, shop is empty
+
+Loader 140276107708096, shop 0, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 1, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 61780, shop: 3, products before: 5000, took: 5000, need after: 56780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, need before: 33194, shop: 4, products before: 5000, took: 5000, need after: 28194, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, need before: 75072, shop: 0, products before: 5000, took: 5000, need after: 70072, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 2, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 3, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 56780, shop: 1, products before: 5000, took: 5000, need after: 51780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, need before: 28194, shop: 2, products before: 5000, took: 5000, need after: 23194, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, need before: 70072, shop: 3, products before: 5000, took: 5000, need after: 65072, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 4, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 0, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 51780, shop: 4, products before: 5000, took: 5000, need after: 46780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, need before: 23194, shop: 0, products before: 5000, took: 5000, need after: 18194, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, shop: 1, shop is empty
+
+Loader 140276107708096, shop 1, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 2, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 46780, shop: 2, products before: 5000, took: 5000, need after: 41780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, shop: 3, shop is empty
+
+Customer: 140276116100800, shop: 4, shop is empty
+
+Loader 140276107708096, shop 3, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 4, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, shop: 0, shop is empty
+
+Customer: 140276124493504, need before: 18194, shop: 1, products before: 5000, took: 5000, need after: 13194, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, shop: 2, shop is empty
+
+Loader 140276107708096, shop 0, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 1, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 41780, shop: 3, products before: 5000, took: 5000, need after: 36780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, need before: 13194, shop: 4, products before: 5000, took: 5000, need after: 8194, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, need before: 65072, shop: 0, products before: 5000, took: 5000, need after: 60072, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 2, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 3, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 36780, shop: 1, products before: 5000, took: 5000, need after: 31780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, need before: 8194, shop: 2, products before: 5000, took: 5000, need after: 3194, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, need before: 60072, shop: 3, products before: 5000, took: 5000, need after: 55072, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 4, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 0, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 31780, shop: 4, products before: 5000, took: 5000, need after: 26780, products after: 0, sleep: 2 sec
+
+Customer: 140276124493504, need before: 3194, shop: 0, products before: 5000, took: 3194, need after: 0, products after: 1806, sleep: 2 sec
+
+Customer: 140276116100800, shop: 1, shop is empty
+
+Loader 140276107708096, shop 1, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 2, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 26780, shop: 2, products before: 5000, took: 5000, need after: 21780, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, shop: 3, shop is empty
+
+Loader 140276107708096, shop 3, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 4, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 21780, shop: 4, products before: 5000, took: 5000, need after: 16780, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, need before: 55072, shop: 0, products before: 1806, took: 1806, need after: 53266, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 0, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 1, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 16780, shop: 1, products before: 10000, took: 10000, need after: 6780, products after: 0, sleep: 2 sec
+
+Customer: 140276116100800, shop: 2, shop is empty
+
+Loader 140276107708096, shop 2, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 3, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
+Customer: 140276132886208, need before: 6780, shop: 3, products before: 10000, took: 6780, need after: 0, products after: 3220, sleep: 2 sec
+
+Customer: 140276116100800, shop: 4, shop is empty
+
+Loader 140276107708096, shop 4, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 0, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
+Customer: 140276116100800, need before: 53266, shop: 0, products before: 10000, took: 10000, need after: 43266, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 1, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 2, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
+Customer: 140276116100800, need before: 43266, shop: 1, products before: 5000, took: 5000, need after: 38266, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 3, products before: 3220, put: 5000, products after: 8220, sleep: 1 sec
+
+Loader 140276107708096, shop 4, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
+Customer: 140276116100800, need before: 38266, shop: 2, products before: 10000, took: 10000, need after: 28266, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 0, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 1, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276116100800, need before: 28266, shop: 3, products before: 8220, took: 8220, need after: 20046, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 2, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 3, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Customer: 140276116100800, need before: 20046, shop: 4, products before: 10000, took: 10000, need after: 10046, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 4, products before: 0, put: 5000, products after: 5000, sleep: 1 sec
+
+Loader 140276107708096, shop 0, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
+Customer: 140276116100800, need before: 10046, shop: 0, products before: 10000, took: 10000, need after: 46, products after: 0, sleep: 2 sec
+
+Loader 140276107708096, shop 1, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
+Loader 140276107708096, shop 2, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
+Customer: 140276116100800, need before: 46, shop: 1, products before: 10000, took: 46, need after: 0, products after: 9954, sleep: 2 sec
+
+Loader 140276107708096, shop 3, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
+Loader 140276107708096, shop 4, products before: 5000, put: 5000, products after: 10000, sleep: 1 sec
+
