@@ -1,5 +1,7 @@
 *.a
 *.o
 *.so
-app1
-app2
+client
+server
+app
+pipe
