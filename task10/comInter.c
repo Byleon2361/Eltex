@@ -5,139 +5,163 @@ int execInput(char *input)
   {
     return 1;
   }
-  char* comms[MAX_COUNT_COMMS];
-  int countComms = 0;
-  char* argv[MAX_COUNT_ARGS];
-  int argc = 0;
-
-  countComms = splitInputOnComms(input, comms);
-  for(int i = 0; i < countComms; i++)
+  if (strcmp(input, "exit") == 0)
   {
-    printf("%s\n\n", comms[i]);
-
-    argc = splitCommOnArgvs(comms[i], argv);
-    for(int j = 0; j < argc; j++)
-    {
-      printf("%s\n", argv[j]);
-    }
-    argc = 0;
-  }
-  if (strcmp(argv[0], "exit") == 0)
-  {
-    freeComms(comms, countComms);
-    freeArgs(argv, argc);
     exit(EXIT_SUCCESS);
   }
 
+  int countComms = 0;
+  int argc = 0;
+
+  char ***argv = malloc(sizeof(char**)*MAX_COUNT_COMMS);
+  if (argv == NULL)
+  {
+    perror("Failed allocate memory");
+    exit(EXIT_FAILURE);
+  }
+
+  countComms = splitInputOnComms(input, argv);
+
+  for(int i = 0; i < countComms; i++)
+  {
+    printf("Аргументы команды %d\n", i);
+
+    for(int j = 0; argv[i][j] != NULL; j++)
+    {
+      printf("%s\n", argv[i][j]);
+    }
+  }
+
   /* execComm(argv); */
-  freeComms(comms, countComms);
   freeArgs(argv, argc);
-  argc = 0;
-  
+
   return 0;
 }
-int splitInputOnComms(char* input, char** comms)
+int splitInputOnComms(char* input, char*** argv)
 {
-    int countComms = 0;
-    char* token = strtok(input, "|");
-    while (countComms < MAX_COUNT_COMMS - 1 && token != NULL)
+  int countComms = 0;
+
+  char** tempBuf = malloc(sizeof(char*)*MAX_COUNT_ARGS);
+  if (tempBuf == NULL)
+  {
+    perror("Failed allocate memory");
+    exit(EXIT_FAILURE);
+  }
+
+  char* tokenComm = strtok(input, "|");
+  while (countComms < MAX_COUNT_COMMS - 1 && tokenComm != NULL)
+  {
+    argv[countComms] = malloc(sizeof(char*)*MAX_COUNT_ARGS);
+    if (argv[countComms] == NULL)
     {
-        comms[countComms] = malloc(MAX_LENGTH_COMMAND);
-        if (comms[countComms] == NULL)
-        {
-            perror("Failed allocate memory");
-            exit(1);
-        }
-        strncpy(comms[countComms], token, MAX_LENGTH_COMMAND);
-        token = strtok(NULL, "|");
-        countComms++;
+      perror("Failed allocate memory");
+      exit(EXIT_FAILURE);
     }
-    comms[countComms] = (char*)NULL;
-    return countComms;
+
+    tempBuf[countComms] = malloc(sizeof(char)*MAX_LENGTH_ARGS);
+    if (tempBuf[countComms] == NULL)
+    {
+      perror("Failed allocate memory");
+      exit(EXIT_FAILURE);
+    }
+
+    strncpy(tempBuf[countComms], tokenComm, MAX_LENGTH_ARGS);
+
+    tokenComm = strtok(NULL, "|");
+    countComms++;
+  }
+  for(int i = 0; i < countComms; i++)
+  {
+    splitCommsOnArgs(tempBuf[i], argv[i]);
+    free(tempBuf[i]);
+  }
+  free(tempBuf);
+
+  return countComms;
 }
-int splitCommOnArgvs(char* comm, char** argv)
+int splitCommsOnArgs(char* comm, char **argv)
 {
-    int argc = 0;
-    char* token = strtok(comm, " ");
-    while (argc < MAX_COUNT_ARGS - 1 && token != NULL)
+  int argc = 0;
+
+  char* tokenArg = strtok(comm, " ");
+  while (argc < MAX_COUNT_ARGS - 1 && tokenArg != NULL)
+  {
+    argv[argc] = malloc(sizeof(char)*MAX_LENGTH_ARGS);
+    if (argv[argc] == NULL)
     {
-        argv[argc] = malloc(MAX_LENGTH_WORD);
-        if (argv[argc] == NULL)
-        {
-            perror("Failed allocate memory");
-            exit(1);
-        }
-        strncpy(argv[argc], token, MAX_LENGTH_WORD);
-        token = strtok(NULL, " ");
-        argc++;
+      perror("Failed allocate memory");
+      exit(EXIT_FAILURE);
     }
-    argv[argc] = (char*)NULL;
-    return argc;
+
+    strncpy(argv[argc], tokenArg, MAX_LENGTH_ARGS);
+    tokenArg = strtok(NULL, " ");
+    argc++;
+  }
+  argv[argc] = (char*)NULL;
+  return argc;
 }
 void execComm(char** argv, char** argv2)
 {
-    int fd[2];
-    char fullPathToApp[MAX_LENGTH_FULL_PATH];
-    char fullPathToApp2[MAX_LENGTH_FULL_PATH];
-    char buf[MAX_BUFFER_SIZE];
+  int fd[2];
+  char fullPathToApp[MAX_LENGTH_FULL_PATH];
+  char fullPathToApp2[MAX_LENGTH_FULL_PATH];
+  char buf[MAX_BUFFER_SIZE];
 
-    strncpy(fullPathToApp, "/usr/bin/", sizeof(fullPathToApp));
-    strcat(fullPathToApp, argv[0]);
+  strncpy(fullPathToApp, "/usr/bin/", sizeof(fullPathToApp));
+  strcat(fullPathToApp, argv[0]);
 
-    strncpy(fullPathToApp2, "/usr/bin/", sizeof(fullPathToApp2));
-    strcat(fullPathToApp2, argv2[0]);
+  strncpy(fullPathToApp2, "/usr/bin/", sizeof(fullPathToApp2));
+  strcat(fullPathToApp2, argv2[0]);
 
-    if(pipe(fd) == -1)
+  if(pipe(fd) == -1)
+  {
+    perror("Failed pipe");
+    exit(EXIT_FAILURE);
+  }
+
+  pid_t sender = fork();
+  pid_t reciever = fork();
+  if (sender == 0)
+  {
+    if (execv(fullPathToApp, argv) < 0)
     {
-      perror("Failed pipe");
-      exit(EXIT_FAILURE);
+      perror("Failed to execute program");
     }
-    
-    pid_t sender = fork();
-    pid_t reciever = fork();
-    if (sender == 0)
-    {
-        if (execv(fullPathToApp, argv) < 0)
-        {
-          perror("Failed to execute program");
-        }
-        
-    dup2(stdout, fd[1]);
-        close(fd[0]);
-        write(fd[1], buf, MAX_BUFFER_SIZE);
-        close(fd[1]);
-        exit(EXIT_SUCCESS);
-    }
-    else if(reciever == 0)
-    {
-      if (execv(fullPathToApp2, argv2) < 0)
-      {
-        perror("Failed to execute program");
-      }
 
-    dup2(stdin, fd[0]);
-      close(fd[1]);
-      read(fd[0], buf, MAX_BUFFER_SIZE);
-      close(fd[0]);
-      exit(EXIT_SUCCESS);
+    dup2(1, fd[1]);
+    close(fd[0]);
+    write(fd[1], buf, MAX_BUFFER_SIZE);
+    close(fd[1]);
+    exit(EXIT_SUCCESS);
+  }
+  else if(reciever == 0)
+  {
+    if (execv(fullPathToApp2, argv2) < 0)
+    {
+      perror("Failed to execute program");
     }
-    wait(NULL);
-    wait(NULL);
 
-    dup2(fd[1], stdout);
-    dup2(fd[0], stdin);
+    dup2(0, fd[0]);
+    close(fd[1]);
+    read(fd[0], buf, MAX_BUFFER_SIZE);
+    close(fd[0]);
+    exit(EXIT_SUCCESS);
+  }
+  wait(NULL);
+  wait(NULL);
+
+  dup2(fd[1], 1);
+  dup2(fd[0], 0);
 }
-void freeComms(char** comms, int countComms)
+void freeArgs(char ***argv, int countComms)
 {
-    for (int i = 0; i < countComms; i++)
+  for(int i = 0; i < countComms; i++)
+  {
+    for(int j = 0; argv[i][j] != NULL; j++)
     {
-      free(comms[countComms]);
+      free(argv[i][j]);
     }
-}
-void freeArgs(char** argv, int argc)
-{
-    for (int i = 0; i < argc; i++)
-    {
-        free(argv[i]);
-    }
+    free(argv[i]);
+  }
+  free(argv);
 }
