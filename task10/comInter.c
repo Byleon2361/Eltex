@@ -108,12 +108,18 @@ char *createPath(char* fullPathToApp, const char* input)
       {
         strncpy(fullPathToApp, "/usr/bin/", PATH_MAX);
         strcat(fullPathToApp, input);
+
+        for(int j =i; j < n; j++)
+        {
+          free(dir[j]);
+        }
+        free(dir);
+
         return fullPathToApp;
       }
       free(dir[i]);
     }
     free(dir);
-
   }
   else
   {
