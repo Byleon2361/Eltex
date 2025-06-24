@@ -19,6 +19,6 @@
 int execInput(char *input);
 int splitInputOnComms(char* input, char*** argv);
 int splitCommsOnArgs(char* comm, char **argv);
-void execComm(char** argv, char** argv2);
+void execComm(char*** argv, int countComms);
 void freeArgs(char ***argv, int countComms);
 #endif

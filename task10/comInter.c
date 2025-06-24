@@ -31,7 +31,7 @@ int execInput(char *input)
     }
   }
 
-  execComm(argv[0], argv[1]);
+  execComm(argv, countComms);
   freeArgs(argv, countComms);
 
   return 0;
@@ -99,61 +99,63 @@ int splitCommsOnArgs(char* comm, char **argv)
   argv[argc] = (char*)NULL;
   return argc;
 }
-void execComm(char** argv, char** argv2)
+void execComm(char*** argv, int countComms)
 {
-  int fd[2];
-  char fullPathToApp[MAX_LENGTH_FULL_PATH];
-  char fullPathToApp2[MAX_LENGTH_FULL_PATH];
+  int fd[countComms - 1][2];
+  pid_t pids[countComms];
 
-  strncpy(fullPathToApp, "/usr/bin/", sizeof(fullPathToApp));
-  strcat(fullPathToApp, argv[0]);
-
-  strncpy(fullPathToApp2, "/usr/bin/", sizeof(fullPathToApp2));
-  strcat(fullPathToApp2, argv2[0]);
-
-  if(pipe(fd) == -1)
+  for(int i = 0; i < countComms-1; i++)
   {
-    perror("Failed pipe");
-    exit(EXIT_FAILURE);
+    if(pipe(fd[i]) == -1)
+    {
+      perror("Failed pipe");
+      exit(EXIT_FAILURE);
+    }
   }
 
-  pid_t sender = fork();
-  if (sender > 0)
+  for(int i = 0; i < countComms; i++)
   {
-    pid_t reciever = fork();
-    if(reciever == 0)
-    {
-      close(fd[1]);
-      dup2(fd[0], 0);
-      close(fd[0]);
+    /* char fullPathToApp[MAX_LENGTH_FULL_PATH]; */
+    /* strncpy(fullPathToApp, "/usr/bin/", sizeof(fullPathToApp)); */
+    /* strcat(fullPathToApp, argv[i][0]); */
 
-      if (execv(fullPathToApp2, argv2) < 0)
+    char fullPathToApp[MAX_LENGTH_FULL_PATH];
+    strncpy(fullPathToApp, argv[i][0], sizeof(fullPathToApp));
+
+    pids[i] = fork();
+    if (pids[i] == 0)
+    {
+      if(i>0)
+      {
+        dup2(fd[i-1][0], 0);
+      }
+      if(i<countComms-1)
+      {
+        dup2(fd[i][1], 1);
+      }
+      for(int j = 0; j < countComms-1; j++)
+      {
+        close(fd[j][0]);
+        close(fd[j][1]);
+      }
+      if (execv(fullPathToApp, argv[i]) < 0)
       {
         perror("Failed to execute program");
       }
-
       exit(EXIT_SUCCESS);
     }
+  }
+  
+  for(int i = 0; i < countComms-1; i++)
+  {
+    close(fd[i][0]);
+    close(fd[i][1]);
+  }
+
+  for(int i = 0; i < countComms; i++)
+  {
     wait(NULL);
   }
-  else if(sender == 0)
-  {
-    close(fd[0]);
-    dup2(fd[1], 1);
-    close(fd[1]);
-
-    if (execv(fullPathToApp, argv) < 0)
-    {
-      perror("Failed to execute program");
-    }
-
-    exit(EXIT_SUCCESS);
-  }
-
-  close(fd[0]);
-  close(fd[1]);
-
-  wait(NULL);
 }
 void freeArgs(char ***argv, int countComms)
 {
