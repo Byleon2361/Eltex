@@ -1,0 +1,7 @@
+*.a
+*.o
+*.so
+client
+server
+app
+pipe

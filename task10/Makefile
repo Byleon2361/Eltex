@@ -1,25 +1,16 @@
-all: app1 app2 app3
+all: comInter
 
-app1: firstTask.o
-	gcc -Wall -o app1 firstTask.o
+comInter: comInter.o main.o
+	gcc -Wall -o comInter comInter.o main.o
 
-firstTask.o: firstTask.c
-	gcc -c firstTask.c
+comInter.o: comInter.c comInter.h
+	gcc -c -g -O0 comInter.c
 
-app2: secondTask.o
-	gcc -Wall -o app2 secondTask.o
-
-secondTask.o: secondTask.c
-	gcc -c secondTask.c
-
-app3: thirdTask.o thirdTaskMain.o
-	gcc -Wall -o app3 thirdTask.o thirdTaskMain.o
-
-thirdTask.o: thirdTask.c thirdTask.h
-	gcc -c thirdTask.c
-
-thirdTaskMain.o: thirdTaskMain.c
-	gcc -c thirdTaskMain.c
+main.o: main.c
+	gcc -c -g -O0 main.c
+	
+run: comInter
+	./comInter
 
 clean:
-	rm -rf app1 app2 app3 *.o
+	rm -rf comInter *.o
