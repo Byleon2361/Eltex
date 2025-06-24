@@ -21,16 +21,6 @@ int execInput(char *input)
 
   countComms = splitInputOnComms(input, argv);
 
-  for(int i = 0; i < countComms; i++)
-  {
-    printf("Аргументы команды %d\n", i);
-
-    for(int j = 0; argv[i][j] != NULL; j++)
-    {
-      printf("%s\n", argv[i][j]);
-    }
-  }
-
   execComm(argv, countComms);
   freeArgs(argv, countComms);
 
@@ -99,6 +89,45 @@ int splitCommsOnArgs(char* comm, char **argv)
   argv[argc] = (char*)NULL;
   return argc;
 }
+char *createPath(char* fullPathToApp, const char* input)
+{
+  if(strchr(input, '/') == NULL)
+  {
+    struct dirent** dir = NULL;
+    int n = scandir("/usr/bin/", &dir, 0, NULL);
+
+    if (n < 0)
+    {
+      perror("Can not scan dir");
+      exit(EXIT_FAILURE);
+    }
+
+    for(int i = 0; i < n; i++)
+    {
+      if(strstr(dir[i]->d_name, input) != NULL)
+      {
+        strncpy(fullPathToApp, "/usr/bin/", PATH_MAX);
+        strcat(fullPathToApp, input);
+        return fullPathToApp;
+      }
+      free(dir[i]);
+    }
+    free(dir);
+
+  }
+  else
+  {
+    if(input[0] == '~')
+    {
+      const char* homePath = getenv("HOME");
+      strncpy(fullPathToApp, homePath, PATH_MAX);
+      strncat(fullPathToApp, input+1, PATH_MAX);
+      return fullPathToApp;
+    }
+  }
+  strncpy(fullPathToApp, input, PATH_MAX);
+  return fullPathToApp;
+}
 void execComm(char*** argv, int countComms)
 {
   int fd[countComms - 1][2];
@@ -115,12 +144,8 @@ void execComm(char*** argv, int countComms)
 
   for(int i = 0; i < countComms; i++)
   {
-    /* char fullPathToApp[MAX_LENGTH_FULL_PATH]; */
-    /* strncpy(fullPathToApp, "/usr/bin/", sizeof(fullPathToApp)); */
-    /* strcat(fullPathToApp, argv[i][0]); */
-
-    char fullPathToApp[MAX_LENGTH_FULL_PATH];
-    strncpy(fullPathToApp, argv[i][0], sizeof(fullPathToApp));
+    char fullPathToApp[PATH_MAX];
+    createPath(fullPathToApp, argv[i][0]);
 
     pids[i] = fork();
     if (pids[i] == 0)

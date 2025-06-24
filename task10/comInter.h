@@ -6,15 +6,12 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 
-#define MAX_LENGTH_INPUT 128
-#define MAX_LENGTH_COMMAND 64
-#define MAX_LENGTH_ARGS 64
-#define MAX_LENGTH_WORD 32
-#define MAX_LENGTH_FULL_PATH 32
+#define MAX_LENGTH_INPUT 2048
+#define MAX_LENGTH_ARGS PATH_MAX
 #define MAX_COUNT_COMMS 8
 #define MAX_COUNT_ARGS 8
-#define MAX_BUFFER_SIZE 1024
 
 int execInput(char *input);
 int splitInputOnComms(char* input, char*** argv);
