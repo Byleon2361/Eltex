@@ -26,7 +26,7 @@ int main()
         exit(EXIT_FAILURE);
     }
     mqd_t idClient = mq_open("/toClient", O_RDWR | O_CREAT, 0600, &attr);
-    if (idClient == -1)
+    if (idServer == -1)
     {
         perror("Failed create queue");
         exit(EXIT_FAILURE);
