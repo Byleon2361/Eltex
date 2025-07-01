@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <mqueue.h>
+#include <pthread.h>
 
 #include <unistd.h>
 
@@ -15,18 +16,33 @@
 #define MAX_LENGTH_NICKNAME 20
 #define MAX_COUNT_MSGS 50
 #define MAX_COUNT_NICKNAMES 16
-void receiveNicknames(mqd_t receiveQueue)
+void *receiveNicknames(void *receiveQueueVoid)
 {
-    char clientName[MAX_LENGTH_NICKNAME];
-    while(1)
+  mqd_t* receiveQueue = (mqd_t*) receiveQueueVoid;
+  char clientName[MAX_LENGTH_NICKNAME];
+  while(1)
+  {
+    if(mq_receive(*receiveQueue, clientName, MAX_LENGTH_NICKNAME,NULL) == -1)
     {
-      if(mq_receive(receiveQueue, clientName, sizeof(clientName), NULL) == -1)
-      {
-        perror("Failed receive");
-        exit(1);
-      }
-      printf("%s", clientName);
+      perror("Failed receive");
+      exit(1);
     }
+    printf("%s", clientName); //Здесь нужно создать дополнительынй буфер со всеми клиентами, и добавить функию вывода всего массива клиентов.
+  }
+}
+void *receiveMsgs(void *receiveQueueVoid)
+{
+  mqd_t* receiveQueue = (mqd_t*) receiveQueueVoid;
+  char msg[MAX_LENGTH_MSG];
+  while(1)
+  {
+    if(mq_receive(*receiveQueue, msg, MAX_LENGTH_MSG, NULL) == -1)
+    {
+      perror("Failed send");
+      exit(1);
+    }
+    printf("rcv msg - %s", msg); //Здесь должна быть функция, которая выводит сообщения на следующую строчку окна, то есть сохранять сообщения в отдельном буфере не нужно, мы сразу их на экран выводим.
+  }
 }
 
 int main()
@@ -36,8 +52,7 @@ int main()
 
     char nickname[MAX_LENGTH_NICKNAME];
     char bufNick[MAX_LENGTH_NICKNAME+1] = "/";
-    char msgQueueName[MAX_LENGTH_NICKNAME+3];
-    char msg[MAX_LENGTH_MSG];
+    char msgQueueName[MAX_LENGTH_NICKNAME+4] = "/";
 
 
     struct mq_attr attr;
@@ -47,13 +62,13 @@ int main()
     mqd_t serviceServerQueue = mq_open("/serviceServerQueue", O_WRONLY);
     if (serviceServerQueue == -1)
     {
-        perror("Failed create queue");
+        perror("Failed open service queue");
         exit(EXIT_FAILURE);
     }
-    mqd_t msgServerQueue = mq_open("/msgServerQueue", O_WRONLY);
-    if (msgServerQueue == -1)
+    mqd_t msgSndServerQueue = mq_open("/msgSndServerQueue", O_WRONLY);
+    if (msgSndServerQueue == -1)
     {
-        perror("Failed create queue");
+        perror("Failed open msg queue");
         exit(EXIT_FAILURE);
     }
 
@@ -63,17 +78,16 @@ int main()
     mqd_t serviceClientQueue = mq_open(bufNick, O_RDONLY | O_CREAT, 0600, &attr);
     if (serviceClientQueue == -1)
     {
-        perror("Failed create queue");
+        perror("Failed create service queue");
         exit(EXIT_FAILURE);
     }
 
-    strncpy(msgQueueName, nickname, MAX_LENGTH_NICKNAME);
-    strcat(msgQueueName, "Msg");
+    snprintf(msgQueueName, MAX_LENGTH_NICKNAME+4, "/msg%s", nickname);
     printf("%s\n", msgQueueName);
     mqd_t msgClientQueue = mq_open(msgQueueName, O_RDONLY | O_CREAT, 0600, &attr);
     if (msgClientQueue == -1)
     {
-        perror("Failed create queue");
+        perror("Failed create msg queue");
         exit(EXIT_FAILURE);
     }
 
@@ -83,7 +97,32 @@ int main()
       exit(1);
     }
 
-      receiveNicknames(serviceClientQueue);
+
+  pthread_t nicknameThread;
+  pthread_t msgThread;
+
+  pthread_create(&nicknameThread, NULL, receiveNicknames, (void*)&serviceClientQueue);
+  pthread_create(&msgThread, NULL, receiveMsgs, (void*)&msgClientQueue);
+
+    char msg[MAX_LENGTH_MSG];
+  while(1)
+  {
+    printf("Enter message...\n");
+    fgets(msg, MAX_LENGTH_MSG, stdin);//Здесь нужно как-то поместить эту функцию в нижние окно
+    if(strcmp(msg, "exit") == 0)
+    {
+      break;
+    }
+    if(mq_send(msgSndServerQueue, msg, strlen(msg), MSG_PRIO) == -1)
+    {
+      perror("Failed send");
+      exit(1);
+    }
+  }
+
+  pthread_join(nicknameThread,NULL);
+  pthread_join(msgThread,NULL);
+
 
       if(mq_close(serviceServerQueue) == -1)
       {
@@ -95,7 +134,7 @@ int main()
         perror("Failed close");
         exit(1);
       }
-      if(mq_close(msgServerQueue) == -1)
+      if(mq_close(msgSndServerQueue) == -1)
       {
         perror("Failed close");
         exit(1);

@@ -28,6 +28,8 @@ typedef struct client
 void cleanClients();
 void addClient(char *nickname);
 void broadcastNicknames();
-void nicknameMain();
+void *nicknameMain(void*);
+void broadcastMsgs(char**);
+void *msgMain(void*);
 
 #endif

@@ -2,6 +2,7 @@
 
 Client clients[MAX_COUNT_NICKNAMES]; 
 int countClients = 0;
+int countMsgs = 0;
 
 void cleanClients()
 {
@@ -61,7 +62,7 @@ void broadcastNicknames()
   }
   printf("------\n");
 }
-void nicknameMain()
+void *nicknameMain(void* args)
 {
 
   struct mq_attr attr;
@@ -102,58 +103,60 @@ void nicknameMain()
 }
 void broadcastMsgs(char **msgs)
 {
-  char msgQueueName[MAX_LENGTH_NICKNAME+3];
+  char msgQueueName[MAX_LENGTH_NICKNAME+4];
   for(int i = 0; i<countClients; i++)
   {
-    strncpy(msgQueueName, clients[i].nickname, MAX_LENGTH_NICKNAME);
-    strcat(msgQueueName, "Msg");
+    snprintf(msgQueueName, sizeof(msgQueueName), "/msg%s", clients[i].nickname);
     mqd_t msgQueue = mq_open(msgQueueName, O_WRONLY);
     if (msgQueue == -1)
     {
+      perror("Failed open msg queue");
+      exit(1);
       /* clients[i].isActive = 0; */
     }
 
-    for(int j = 0; j<countClients; j++)
+      printf("count MSGS - %d\n", countMsgs);
+    for(int j = 0; j<countMsgs; j++)
     {
-      mq_send(msgQueue, msgs[i], strlen(msgs[j]) + 1, NICKNAME_PRIO);
-      printf("%s", clients[j].nickname);
+      printf("for\n");
+      mq_send(msgQueue, msgs[j], strlen(msgs[j]) + 1, NICKNAME_PRIO);
+      printf("msg  -  %s", msgs[j]);
     }
     mq_close(msgQueue);
     printf("%s", msgs[i]);
   }
   printf("------\n");
 }
-void msgMain()
+void *msgMain(void* args)
 {
 
   struct mq_attr attr;
   attr.mq_maxmsg = MAX_COUNT_MESSAGES;
   attr.mq_msgsize = MAX_MSG_SIZE;
 
-  mqd_t msgServerQueue = mq_open("/msgServerQueue", O_RDONLY | O_CREAT, 0600, &attr);
+  mqd_t msgServerQueue = mq_open("/msgSndServerQueue", O_RDONLY | O_CREAT, 0600, &attr);
   if (msgServerQueue == -1)
   {
     perror("Failed create queue");
     exit(EXIT_FAILURE);
   }
 
-  int countMsgs = 0;
-  char **msgs = malloc(sizeof(char*)*MAX_COUNT_MSGS);
-  for(int i = 0; i < MAX_COUNT_MSGS; i++)
+  char **msgs = malloc(sizeof(char*)*MAX_COUNT_MESSAGES);
+  for(int i = 0; i < MAX_COUNT_MESSAGES; i++)
   {
-    msgs[i] = malloc(sizeof(char)*MAX_LENGTH_MSG);
+    msgs[i] = malloc(sizeof(char)*MAX_MSG_SIZE);
   }
 
   while(1)
   {
-    if(mq_receive(msgServerQueue, msgs[countMsgs], sizeof(msgs[0]), NULL) == -1)
+    if(mq_receive(msgServerQueue, msgs[countMsgs], MAX_MSG_SIZE, NULL) == -1)
     {
-      perror("Failed serviceServerQueue receive");
+      perror("Failed msgServerQueue receive");
       exit(1);
     }
+    countMsgs++;
 
     broadcastMsgs(msgs);
-    countMsgs++;
   }
 
   for(int i = 0; i < MAX_COUNT_MSGS; i++)
@@ -167,7 +170,7 @@ void msgMain()
     perror("Failed close");
     exit(1);
   }
-  if(mq_unlink("/msgServerQueue") == -1)
+  if(mq_unlink("/msgSndServerQueue") == -1)
   {
     perror("Failed unlink");
     exit(1);
