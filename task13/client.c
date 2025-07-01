@@ -30,7 +30,7 @@ int main()
     attr.mq_maxmsg = MAX_COUNT_MESSAGES;
     attr.mq_msgsize = MAX_MSG_SIZE;
 
-    mqd_t serviceServerQueue = mq_open("/serviceServerQueue", O_WRONLY | O_CREAT, 0600, &attr);
+    mqd_t serviceServerQueue = mq_open("/serviceServerQueue", O_WRONLY);
     if (serviceServerQueue == -1)
     {
         perror("Failed create queue");
@@ -50,19 +50,26 @@ int main()
 
     if(mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_PRIO) == -1)
     {
-      perror("Failed close");
+      perror("Failed send");
       exit(1);
     }
 
-    /* if(mq_receive(serviceServerQueue, clientName, sizeof(clientName), NULL) == -1) */
-    /* { */
-    /*   perror("Failed serviceServerQueue receive"); */
-    /*   exit(1); */
-    /* } */
+    char clientName[MAX_LENGTH_NICKNAME];
+    while(1)
+    {
+      if(mq_receive(serviceClientQueue, clientName, sizeof(clientName), NULL) == -1)
+      {
+        perror("Failed receive");
+        exit(1);
+      }
+      printf("%s", clientName);
+    }
 
-    printf("Press any button");
-    getchar();
-
+      if(mq_close(serviceServerQueue) == -1)
+      {
+        perror("Failed close");
+        exit(1);
+      }
       if(mq_close(serviceClientQueue) == -1)
       {
         perror("Failed close");

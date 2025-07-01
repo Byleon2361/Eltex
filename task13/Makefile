@@ -1,10 +1,13 @@
 all:server client
 
-server: server.o
-	gcc -Wall -o server server.o -lrt
+server: server.o nicknameManager.o
+	gcc -Wall -o server server.o nicknameManager.o -lrt
 
 server.o: server.c
 	gcc -c -g -O0 server.c
+	
+nicknameManager.o: nicknameManager.c nicknameManager.h
+	gcc -c -g -O0 nicknameManager.c
 
 client: client.o
 	gcc -Wall -o client client.o -lrt
