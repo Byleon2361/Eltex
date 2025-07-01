@@ -4,7 +4,7 @@ server: server.o
 	gcc -Wall -o server server.o -lrt
 
 server.o: server.c
-	gcc -c server.c
+	gcc -c -g -O0 server.c
 
 client: client.o
 	gcc -Wall -o client client.o -lrt

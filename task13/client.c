@@ -48,10 +48,20 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_PRIO);
+    if(mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_PRIO) == -1)
+    {
+      perror("Failed close");
+      exit(1);
+    }
+
+    /* if(mq_receive(serviceServerQueue, clientName, sizeof(clientName), NULL) == -1) */
+    /* { */
+    /*   perror("Failed serviceServerQueue receive"); */
+    /*   exit(1); */
+    /* } */
 
     printf("Press any button");
-getchar();
+    getchar();
 
       if(mq_close(serviceClientQueue) == -1)
       {
