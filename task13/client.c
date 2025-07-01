@@ -15,6 +15,19 @@
 #define MAX_LENGTH_NICKNAME 20
 #define MAX_COUNT_MSGS 50
 #define MAX_COUNT_NICKNAMES 16
+void receiveNicknames(mqd_t receiveQueue)
+{
+    char clientName[MAX_LENGTH_NICKNAME];
+    while(1)
+    {
+      if(mq_receive(receiveQueue, clientName, sizeof(clientName), NULL) == -1)
+      {
+        perror("Failed receive");
+        exit(1);
+      }
+      printf("%s", clientName);
+    }
+}
 
 int main()
 {
@@ -23,6 +36,7 @@ int main()
 
     char nickname[MAX_LENGTH_NICKNAME];
     char bufNick[MAX_LENGTH_NICKNAME+1] = "/";
+    char msgQueueName[MAX_LENGTH_NICKNAME+3];
     char msg[MAX_LENGTH_MSG];
 
 
@@ -36,13 +50,28 @@ int main()
         perror("Failed create queue");
         exit(EXIT_FAILURE);
     }
+    mqd_t msgServerQueue = mq_open("/msgServerQueue", O_WRONLY);
+    if (msgServerQueue == -1)
+    {
+        perror("Failed create queue");
+        exit(EXIT_FAILURE);
+    }
 
     printf("Enter nickname\n");
     fgets(nickname, MAX_LENGTH_NICKNAME, stdin);
     strcat(bufNick, nickname);
-    printf("%s\n", bufNick);
     mqd_t serviceClientQueue = mq_open(bufNick, O_RDONLY | O_CREAT, 0600, &attr);
     if (serviceClientQueue == -1)
+    {
+        perror("Failed create queue");
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(msgQueueName, nickname, MAX_LENGTH_NICKNAME);
+    strcat(msgQueueName, "Msg");
+    printf("%s\n", msgQueueName);
+    mqd_t msgClientQueue = mq_open(msgQueueName, O_RDONLY | O_CREAT, 0600, &attr);
+    if (msgClientQueue == -1)
     {
         perror("Failed create queue");
         exit(EXIT_FAILURE);
@@ -54,16 +83,7 @@ int main()
       exit(1);
     }
 
-    char clientName[MAX_LENGTH_NICKNAME];
-    while(1)
-    {
-      if(mq_receive(serviceClientQueue, clientName, sizeof(clientName), NULL) == -1)
-      {
-        perror("Failed receive");
-        exit(1);
-      }
-      printf("%s", clientName);
-    }
+      receiveNicknames(serviceClientQueue);
 
       if(mq_close(serviceServerQueue) == -1)
       {
@@ -75,7 +95,22 @@ int main()
         perror("Failed close");
         exit(1);
       }
+      if(mq_close(msgServerQueue) == -1)
+      {
+        perror("Failed close");
+        exit(1);
+      }
+      if(mq_close(msgClientQueue) == -1)
+      {
+        perror("Failed close");
+        exit(1);
+      }
       if(mq_unlink(bufNick) == -1)
+      {
+        perror("Failed unlink");
+        exit(1);
+      }
+      if(mq_unlink(msgQueueName) == -1)
       {
         perror("Failed unlink");
         exit(1);

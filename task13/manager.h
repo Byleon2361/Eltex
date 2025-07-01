@@ -12,12 +12,12 @@
 #define MAX_COUNT_MESSAGES 8
 #define MAX_MSG_SIZE 20
 
-#define MSG_PRIO 1
 #define NICKNAME_PRIO 2
-#define MAX_LENGTH_MSG 256
 #define MAX_LENGTH_NICKNAME 20
-#define MAX_COUNT_MSGS 50
 #define MAX_COUNT_NICKNAMES 16
+#define MSG_PRIO 1
+#define MAX_LENGTH_MSG 256
+#define MAX_COUNT_MSGS 50
 
 typedef struct client
 {
@@ -27,6 +27,7 @@ typedef struct client
 
 void cleanClients();
 void addClient(char *nickname);
+void broadcastNicknames();
 void nicknameMain();
 
 #endif
