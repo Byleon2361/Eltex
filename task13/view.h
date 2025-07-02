@@ -25,12 +25,9 @@ extern SCREEN* s;
 
 void initChat();
 Chat* createTable(int pos);
-int writePathInChat(Chat* chat, char *path);
-void wprintDir(Chat* chat,int startVisibleAre);
-int dehighlightFile(Chat* activeChat);
-int highlightFile(Chat* activeWin, int y, int x);
 void refreshChat(Chat* chat);
-void clearMyWin(Chat* chat);
-void freeNamelist(struct dirent** namelist, int count);
 void destroyChat(Chat* chat);
+void printMsg(Chat* chat, char* msg);
+void printNicknames(Chat* chat, char **nicknames, int countNicknames, char* currentNickname);
+char* enterMsg(Chat* chat, char* msg, int maxLengthMsg);
 #endif

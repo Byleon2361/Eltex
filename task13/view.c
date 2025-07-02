@@ -5,8 +5,6 @@ void initChat()
     s = newterm(NULL,stdout, stdin);
 
     cbreak();
-    noecho();
-    keypad(stdscr, TRUE);
     notimeout(stdscr, 0);
 
     curs_set(0);
@@ -19,7 +17,6 @@ void initChat()
 Chat* createChat()
 {
     Chat* chat = malloc(sizeof(Chat));
-    int sizeCol = COLS / 6;
 
     WINDOW* msgWin = newwin(LINES-3, COLS*4 / 6, 0, 0);
     WINDOW* nicknameWin = newwin(LINES-3, COLS*2 / 6, 0, COLS*4/6);
@@ -42,44 +39,17 @@ Chat* createChat()
 
     return chat;
 }
-/* int highlightFile(Chat* activeWin, int y, int x) */
-/* { */
-
-/*     int width = 0; */
-/*     dehighlightFile(activeWin); */
-/*     for (int i = 0; i < COUNT_SUBWINS; i++) */
-/*     { */
-/*         int width = getmaxx(activeWin->subWins[i]) - 2; */
-/*         mvwchgat(activeWin->subWins[i], y, 1, width, A_REVERSE, 1, NULL); */
-/*         wrefresh(activeWin->subWins[i]); */
-/*     } */
-/*     return 0; */
-/* } */
-void refreshChat(Chat* win)
+void refreshChat(Chat* chat)
 {
-    wrefresh(win->msgWin);
-    wrefresh(win->nicknameWin);
-    wrefresh(win->inputWin);
+    wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    wborder(chat->inputWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+
+    wrefresh(chat->msgWin);
+    wrefresh(chat->nicknameWin);
+    wrefresh(chat->inputWin);
     refresh();
 }
-/* void clearMyWin(Chat* myWin) */
-/* { */
-/*     int start_line = 2; */
-/*     for (int i = start_line; i < LINES; i++) */
-/*     { */
-/*         wmove(myWin->subWins[0], i, 1); */
-/*         wclrtoeol(myWin->subWins[0]); */
-
-/*         wmove(myWin->subWins[1], i, 1); */
-/*         whline(myWin->subWins[1], ' ', getmaxx(myWin->subWins[1])); */
-
-/*         wmove(myWin->subWins[2], i, 0); */
-/*         wclrtoeol(myWin->subWins[2]); */
-/*     } */
-/*     box(myWin->win, 0, 0); */
-/*     wborder(myWin->subWins[1], ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_TTEE, ACS_TTEE, ACS_BTEE, ACS_BTEE); */
-/*     refreshChat(myWin); */
-/* } */
 void destroyChat(Chat* chat)
 {
     if (!chat) return;
@@ -87,14 +57,68 @@ void destroyChat(Chat* chat)
     delwin(chat->msgWin);
     delwin(chat->inputWin);
     delwin(chat->nicknameWin);
-
     free(chat);
+
+    endwin();
+    delscreen(s);
+}
+void printMsg(Chat* chat, char* msg)
+{
+  int x = 0;
+  int y = 0;
+
+  getyx(chat->msgWin,y,x);
+  y++;
+  wmove(chat->msgWin,y,1); 
+
+  waddstr(chat->msgWin, msg);
+  refreshChat(chat);
+}
+void printNicknames(Chat* chat, char **nicknames, int countNicknames, char* currentNickname)
+{
+  int x = 0;
+  int y = 0;
+  getyx(chat->nicknameWin,y,x);
+  for(int i = 0; i < countNicknames; i++)
+  {
+    y++;
+    wmove(chat->nicknameWin,y,1); 
+    waddstr(chat->nicknameWin, nicknames[i]);
+    if(strcmp(nicknames[i], currentNickname) == 0)
+    {
+        int width = getmaxx(chat->nicknameWin) - 2;
+        mvwchgat(chat->nicknameWin, y, 1, width, A_REVERSE, 1, NULL);
+    }
+  }
+  refreshChat(chat);
+}
+char* enterMsg(Chat* chat, char* msg, int maxLengthMsg)
+{
+  mvwgetnstr(chat->inputWin,1,1, msg, maxLengthMsg);
+  wclear(chat->inputWin);
+
+  return NULL;
 }
 int main()
 {
+  char *nicknames[3] = {"qwe\n", "asd\n", "zxc\n"};
   initChat();
   Chat *chat = createChat();
-  getch();
+  printNicknames(chat, nicknames, 3, "asd\n");
+  printMsg(chat, "Hello, world");
+  printMsg(chat, "Hi");
+  printMsg(chat, "How are you?");
+  printMsg(chat, "I am okay");
+  char buf[20];
+  while(1)
+  {
+   enterMsg(chat, buf, 20); 
+    if(strcmp(buf, "exit") == 0)
+    {
+      break;
+    }
+   printMsg(chat, buf);
+  }
   destroyChat(chat);
 
   return 0;
