@@ -2,8 +2,9 @@
 SCREEN* s = NULL;
 void initChat()
 {
-    s = newterm(NULL,stdout, stdin);
+    s = newterm(NULL, stdout, stdin);
 
+    noecho();
     cbreak();
     notimeout(stdscr, 0);
 
@@ -18,9 +19,9 @@ Chat* createChat()
 {
     Chat* chat = malloc(sizeof(Chat));
 
-    WINDOW* msgWin = newwin(LINES-3, COLS*4 / 6, 0, 0);
-    WINDOW* nicknameWin = newwin(LINES-3, COLS*2 / 6, 0, COLS*4/6);
-    WINDOW* inputWin = newwin(3, COLS, LINES-3, 0);
+    WINDOW* msgWin = newwin(LINES - 3, COLS * 4 / 6, 0, 0);
+    WINDOW* nicknameWin = newwin(LINES - 3, COLS * 2 / 6, 0, COLS * 4 / 6);
+    WINDOW* inputWin = newwin(3, COLS, LINES - 3, 0);
 
     wbkgd(msgWin, COLOR_PAIR(1));
     wbkgd(nicknameWin, COLOR_PAIR(1));
@@ -34,7 +35,6 @@ Chat* createChat()
     chat->nicknameWin = nicknameWin;
     chat->inputWin = inputWin;
 
-    refresh();
     refreshChat(chat);
 
     return chat;
@@ -64,62 +64,91 @@ void destroyChat(Chat* chat)
 }
 void printMsg(Chat* chat, char* msg)
 {
-  int x = 0;
-  int y = 0;
+    int x = 0;
+    int y = 0;
 
-  getyx(chat->msgWin,y,x);
-  y++;
-  wmove(chat->msgWin,y,1); 
-
-  waddstr(chat->msgWin, msg);
-  refreshChat(chat);
-}
-void printNicknames(Chat* chat, char **nicknames, int countNicknames, char* currentNickname)
-{
-  int x = 0;
-  int y = 0;
-  getyx(chat->nicknameWin,y,x);
-  for(int i = 0; i < countNicknames; i++)
-  {
+    getyx(chat->msgWin, y, x);
     y++;
-    wmove(chat->nicknameWin,y,1); 
-    waddstr(chat->nicknameWin, nicknames[i]);
-    if(strcmp(nicknames[i], currentNickname) == 0)
+    wmove(chat->msgWin, y, 1);
+
+    waddstr(chat->msgWin, msg);
+
+    wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    /* refreshChat(chat); */
+    wrefresh(chat->msgWin);
+}
+void clearMsgWin(Chat* chat)
+{
+    wclear(chat->msgWin);
+    wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    wrefresh(chat->msgWin);
+    /* refreshChat(chat); */
+}
+void printNickname(Chat* chat, char* nickname, char* currentNickname)
+{
+    int x = 0;
+    int y = 0;
+    getyx(chat->nicknameWin, y, x);
+    y++;
+    wmove(chat->nicknameWin, y, 1);
+    waddstr(chat->nicknameWin, nickname);
+    if (strcmp(nickname, currentNickname) == 0)
     {
         int width = getmaxx(chat->nicknameWin) - 2;
         mvwchgat(chat->nicknameWin, y, 1, width, A_REVERSE, 1, NULL);
     }
-  }
-  refreshChat(chat);
+
+    wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    /* refreshChat(chat); */
+    wrefresh(chat->nicknameWin);
+}
+void clearNicknameWin(Chat* chat)
+{
+    wclear(chat->nicknameWin);
+    wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    wrefresh(chat->nicknameWin);
+    /* refreshChat(chat); */
 }
 char* enterMsg(Chat* chat, char* msg, int maxLengthMsg)
 {
-  mvwgetnstr(chat->inputWin,1,1, msg, maxLengthMsg);
-  wclear(chat->inputWin);
+  echo();
+    mvwgetnstr(chat->inputWin, 1, 1, msg, maxLengthMsg);
+    noecho();
+    wclear(chat->inputWin);
+    wborder(chat->inputWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    wrefresh(chat->inputWin);
+    /* refreshChat(chat); */
 
-  return NULL;
+    return NULL;
 }
-int main()
-{
-  char *nicknames[3] = {"qwe\n", "asd\n", "zxc\n"};
-  initChat();
-  Chat *chat = createChat();
-  printNicknames(chat, nicknames, 3, "asd\n");
-  printMsg(chat, "Hello, world");
-  printMsg(chat, "Hi");
-  printMsg(chat, "How are you?");
-  printMsg(chat, "I am okay");
-  char buf[20];
-  while(1)
-  {
-   enterMsg(chat, buf, 20); 
-    if(strcmp(buf, "exit") == 0)
-    {
-      break;
-    }
-   printMsg(chat, buf);
-  }
-  destroyChat(chat);
+/* int main() */
+/* { */
+/*   initChat(); */
+/*   Chat *chat = createChat(); */
 
-  return 0;
-}
+/*   clearMsgWin(chat); */
+/*   clearNicknameWin(chat); */
+
+/*   printNickname(chat, "asd", "asd"); */
+/*   printNickname(chat, "qwe", "asd"); */
+/*   printNickname(chat, "zxc", "asd"); */
+
+/*   printMsg(chat, "Hello, world"); */
+/*   printMsg(chat, "Hi"); */
+/*   printMsg(chat, "How are you?"); */
+/*   printMsg(chat, "I am okay"); */
+
+/*   char buf[20]; */
+/*   while(1) */
+/*   { */
+/*    enterMsg(chat, buf, 20);  */
+/*     if(strcmp(buf, "exit") == 0) */
+/*     { */
+/*       break; */
+/*     } */
+/*    printMsg(chat, buf); */
+/*   } */
+/*   destroyChat(chat); */
+
+/*   return 0; */
+/* } */

@@ -50,6 +50,7 @@ void broadcastNicknames()
       clients[i].isActive = 0;
     }
 
+    mq_send(client, "\0", 2, CLEAR_PRIO);
     for(int j = 0; j<countClients; j++)
     {
       mq_send(client, clients[j].nickname, strlen(clients[j].nickname) + 1, NICKNAME_PRIO);
@@ -116,6 +117,7 @@ void broadcastMsgs(char **msgs)
     }
 
       printf("count MSGS - %d\n", countMsgs);
+    mq_send(msgQueue, "\0", 2, CLEAR_PRIO);
     for(int j = 0; j<countMsgs; j++)
     {
       printf("for\n");

@@ -24,10 +24,12 @@ typedef struct chat
 extern SCREEN* s;
 
 void initChat();
-Chat* createTable(int pos);
+Chat* createChat();
 void refreshChat(Chat* chat);
 void destroyChat(Chat* chat);
 void printMsg(Chat* chat, char* msg);
-void printNicknames(Chat* chat, char **nicknames, int countNicknames, char* currentNickname);
+void clearMsgWin(Chat* chat);
+void printNickname(Chat* chat, char* nickname, char* currentNickname);
+void clearNicknameWin(Chat* chat);
 char* enterMsg(Chat* chat, char* msg, int maxLengthMsg);
 #endif
