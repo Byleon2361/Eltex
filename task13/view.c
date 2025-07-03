@@ -4,6 +4,7 @@ void initChat()
 {
     s = newterm(NULL, stdout, stdin);
 
+    clear();
     noecho();
     cbreak();
     notimeout(stdscr, 0);
@@ -26,6 +27,9 @@ Chat* createChat()
     wbkgd(msgWin, COLOR_PAIR(1));
     wbkgd(nicknameWin, COLOR_PAIR(1));
     wbkgd(inputWin, COLOR_PAIR(1));
+
+    scrollok(nicknameWin, 1);
+    scrollok(msgWin, 1);
 
     wborder(msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
     wborder(nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
@@ -64,10 +68,20 @@ void destroyChat(Chat* chat)
 }
 void printMsg(Chat* chat, char* msg)
 {
+    /* int maxY = getmaxy(chat->msgWin)-2; */
     int x = 0;
     int y = 0;
 
     getyx(chat->msgWin, y, x);
+    /* if(y >= maxY) */
+    /* { */
+    /*   wscrl(chat->msgWin,1); */
+    /*   y = maxY -1; */
+    /* } */
+    /* else */
+    /* { */
+    /*   y++; */
+    /* } */
     y++;
     wmove(chat->msgWin, y, 1);
 
@@ -86,6 +100,7 @@ void clearMsgWin(Chat* chat)
 }
 void printNickname(Chat* chat, char* nickname, char* currentNickname)
 {
+
     int x = 0;
     int y = 0;
     getyx(chat->nicknameWin, y, x);
@@ -107,19 +122,16 @@ void clearNicknameWin(Chat* chat)
     wclear(chat->nicknameWin);
     wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
     wrefresh(chat->nicknameWin);
-    /* refreshChat(chat); */
 }
-char* enterMsg(Chat* chat, char* msg, int maxLengthMsg)
+void enterMsg(Chat* chat, char* msg, int maxLengthMsg)
 {
-  echo();
+    echo();
     mvwgetnstr(chat->inputWin, 1, 1, msg, maxLengthMsg);
     noecho();
     wclear(chat->inputWin);
     wborder(chat->inputWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
     wrefresh(chat->inputWin);
     /* refreshChat(chat); */
-
-    return NULL;
 }
 /* int main() */
 /* { */

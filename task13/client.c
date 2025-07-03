@@ -83,7 +83,7 @@ void sendMsgInChat(mqd_t* msgSndServerQueue)
             /* pthread_mutex_unlock(&mtx); */
         if (strcmp(msg, "exit") == 0)
         {
-            break;
+            return;
         }
         if (mq_send(*msgSndServerQueue, msg, strlen(msg), MSG_PRIO) == -1)
         {
@@ -95,6 +95,7 @@ void sendMsgInChat(mqd_t* msgSndServerQueue)
 
 int main()
 {
+
     char nicknames[MAX_COUNT_NICKNAMES][MAX_LENGTH_NICKNAME];
     char msgs[MAX_COUNT_MSGS][MAX_LENGTH_MSG];
 
@@ -137,12 +138,6 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    if (mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_PRIO) == -1)
-    {
-        perror("Failed send");
-        exit(1);
-    }
-
     initChat();
     chat = createChat();
     refreshChat(chat);
@@ -153,10 +148,17 @@ int main()
     pthread_create(&nicknameThread, NULL, receiveNicknames, (void*)&serviceClientQueue);
     pthread_create(&msgThread, NULL, receiveMsgs, (void*)&msgClientQueue);
 
+    if (mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_PRIO) == -1)
+    {
+        perror("Failed send");
+        exit(1);
+    }
+
     sendMsgInChat(&msgSndServerQueue);
 
-    pthread_join(nicknameThread, NULL);
-    pthread_join(msgThread, NULL);
+    pthread_cancel(nicknameThread);
+    pthread_cancel(msgThread);
+    destroyChat(chat);
 
     if (mq_close(serviceServerQueue) == -1)
     {

@@ -31,5 +31,5 @@ void printMsg(Chat* chat, char* msg);
 void clearMsgWin(Chat* chat);
 void printNickname(Chat* chat, char* nickname, char* currentNickname);
 void clearNicknameWin(Chat* chat);
-char* enterMsg(Chat* chat, char* msg, int maxLengthMsg);
+void enterMsg(Chat* chat, char* msg, int maxLengthMsg);
 #endif
