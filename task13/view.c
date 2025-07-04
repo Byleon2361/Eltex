@@ -14,7 +14,6 @@ void initChat()
     start_color();
     init_pair(1, COLOR_WHITE, COLOR_BLUE);   // Дефолтный цвет
     init_pair(2, COLOR_BLACK, COLOR_CYAN);   // Выделенная директория или файл
-    init_pair(3, COLOR_YELLOW, COLOR_BLUE);  // Заголовки
 }
 Chat* createChat()
 {
@@ -88,7 +87,6 @@ void printMsg(Chat* chat, char* msg)
     waddstr(chat->msgWin, msg);
 
     wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-    /* refreshChat(chat); */
     wrefresh(chat->msgWin);
 }
 void clearMsgWin(Chat* chat)
@@ -96,11 +94,9 @@ void clearMsgWin(Chat* chat)
     wclear(chat->msgWin);
     wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
     wrefresh(chat->msgWin);
-    /* refreshChat(chat); */
 }
 void printNickname(Chat* chat, char* nickname, char* currentNickname)
 {
-
     int x = 0;
     int y = 0;
     getyx(chat->nicknameWin, y, x);
@@ -114,7 +110,6 @@ void printNickname(Chat* chat, char* nickname, char* currentNickname)
     }
 
     wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-    /* refreshChat(chat); */
     wrefresh(chat->nicknameWin);
 }
 void clearNicknameWin(Chat* chat)
@@ -131,7 +126,6 @@ void enterMsg(Chat* chat, char* msg, int maxLengthMsg)
     wclear(chat->inputWin);
     wborder(chat->inputWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
     wrefresh(chat->inputWin);
-    /* refreshChat(chat); */
 }
 /* int main() */
 /* { */

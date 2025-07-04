@@ -7,11 +7,25 @@ int countMsgs = 0;
 void cleanClients()
 {
   int i =0;
+  char bufNick[MAX_LENGTH_NICKNAME+1];
+  for(int j = 0; j<countClients; j++)
+  {
+    snprintf(bufNick, sizeof(bufNick), "/%s", clients[j].nickname);
+    mqd_t client = mq_open(bufNick, O_WRONLY);
+    if (client == -1)
+    {
+      printf("client %s - DIE\n", clients[j].nickname);
+      clients[j].isActive = 0;
+    }
+    else
+    {
+      mq_close(client);
+    }
+  }
   while(i<countClients)
   {
     if(!clients[i].isActive)
     {
-
       for(int j =i; j<countClients-1; j++)
       {
         clients[j] = clients[j+1];
@@ -39,11 +53,11 @@ void addClient(char *nickname)
 }
 void broadcastNicknames()
 {
+    printf("COUNT CLIENTS %d\n", countClients);
   char bufNick[MAX_LENGTH_NICKNAME+1];
   for(int i = 0; i<countClients; i++)
   {
     snprintf(bufNick, sizeof(bufNick), "/%s", clients[i].nickname);
-
     mqd_t client = mq_open(bufNick, O_WRONLY);
     if (client == -1)
     {
@@ -54,12 +68,11 @@ void broadcastNicknames()
     for(int j = 0; j<countClients; j++)
     {
       mq_send(client, clients[j].nickname, strlen(clients[j].nickname) + 1, NICKNAME_PRIO);
-      printf("%s", clients[j].nickname);
+      printf("%s\n", clients[j].nickname);
     }
     mq_close(client);
 
-
-    printf("%s", bufNick);
+    printf("%s\n", bufNick);
   }
   printf("------\n");
 }
@@ -78,17 +91,24 @@ void *nicknameMain(void* args)
   }
 
   char clientName[MAX_LENGTH_NICKNAME];
+  unsigned int prio;
   while(1)
   {
-    if(mq_receive(serviceServerQueue, clientName, sizeof(clientName), NULL) == -1)
+    if(mq_receive(serviceServerQueue, clientName, sizeof(clientName), &prio) == -1)
     {
       perror("Failed serviceServerQueue receive");
       exit(1);
     }
-
-    cleanClients();
-    addClient(clientName);
-    broadcastNicknames();
+    if(prio != DIED_PRIO)
+    {
+      addClient(clientName);
+      broadcastNicknames();
+    }
+    else
+    {
+      cleanClients();
+      broadcastNicknames();
+    }
   }
 
   if(mq_close(serviceServerQueue) == -1)
@@ -111,8 +131,8 @@ void broadcastMsgs(char **msgs)
     mqd_t msgQueue = mq_open(msgQueueName, O_WRONLY);
     if (msgQueue == -1)
     {
-      perror("Failed open msg queue");
-      exit(1);
+      /* perror("Failed open msg queue"); */
+      /* exit(1); */
       /* clients[i].isActive = 0; */
     }
 
@@ -120,12 +140,11 @@ void broadcastMsgs(char **msgs)
     mq_send(msgQueue, "\0", 2, CLEAR_PRIO);
     for(int j = 0; j<countMsgs; j++)
     {
-      printf("for\n");
       mq_send(msgQueue, msgs[j], strlen(msgs[j]) + 1, NICKNAME_PRIO);
-      printf("msg  -  %s", msgs[j]);
+      printf("msg  -  %s\n", msgs[j]);
     }
     mq_close(msgQueue);
-    printf("%s", msgs[i]);
+    printf("%s\n", msgs[i]);
   }
   printf("------\n");
 }

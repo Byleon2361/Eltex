@@ -14,6 +14,7 @@
 #define MSG_PRIO 1
 #define NICKNAME_PRIO 2
 #define CLEAR_PRIO 3
+#define DIED_PRIO 4
 #define MAX_LENGTH_MSG 256
 #define MAX_LENGTH_NICKNAME 20
 #define MAX_COUNT_MSGS 50
@@ -21,7 +22,6 @@
 
 Chat* chat;
 char nickname[MAX_LENGTH_NICKNAME];
-pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 void* receiveNicknames(void* receiveQueueVoid)
 {
@@ -36,7 +36,6 @@ void* receiveNicknames(void* receiveQueueVoid)
             perror("Failed receive");
             exit(1);
         }
-            pthread_mutex_lock(&mtx);
         if (prio == NICKNAME_PRIO)
         {
             printNickname(chat, clientName, nickname);
@@ -45,7 +44,6 @@ void* receiveNicknames(void* receiveQueueVoid)
         {
             clearNicknameWin(chat);
         }
-            pthread_mutex_unlock(&mtx);
     }
 }
 void* receiveMsgs(void* receiveQueueVoid)
@@ -60,7 +58,6 @@ void* receiveMsgs(void* receiveQueueVoid)
             perror("Failed send");
             exit(1);
         }
-            pthread_mutex_lock(&mtx);
         if (prio == NICKNAME_PRIO)
         {
             printMsg(chat, msg);
@@ -69,7 +66,6 @@ void* receiveMsgs(void* receiveQueueVoid)
         {
             clearMsgWin(chat);
         }
-            pthread_mutex_unlock(&mtx);
     }
 }
 void sendMsgInChat(mqd_t* msgSndServerQueue)
@@ -77,10 +73,7 @@ void sendMsgInChat(mqd_t* msgSndServerQueue)
     char msg[MAX_LENGTH_MSG];
     while (1)
     {
-      //если расскоментировать эти мьютексы, то окно будет корректно отображаться, но не будут отображаться сообщения на экране, так как этот мьютекс не дает другим потокам использовать окно. Может поля структуры сделать глобальными переменнами?
-            /* pthread_mutex_lock(&mtx); */
         enterMsg(chat, msg, MAX_LENGTH_MSG);
-            /* pthread_mutex_unlock(&mtx); */
         if (strcmp(msg, "exit") == 0)
         {
             return;
@@ -120,7 +113,6 @@ int main()
     }
 
     printf("Enter nickname\n");
-    /* fgets(nickname, MAX_LENGTH_NICKNAME, stdin); */
     scanf("%19s", nickname);
     strcat(bufNick, nickname);
     mqd_t serviceClientQueue = mq_open(bufNick, O_RDONLY | O_CREAT, 0600, &attr);
@@ -148,23 +140,20 @@ int main()
     pthread_create(&nicknameThread, NULL, receiveNicknames, (void*)&serviceClientQueue);
     pthread_create(&msgThread, NULL, receiveMsgs, (void*)&msgClientQueue);
 
+
     if (mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_PRIO) == -1)
     {
         perror("Failed send");
         exit(1);
     }
-
+    
     sendMsgInChat(&msgSndServerQueue);
+
 
     pthread_cancel(nicknameThread);
     pthread_cancel(msgThread);
     destroyChat(chat);
 
-    if (mq_close(serviceServerQueue) == -1)
-    {
-        perror("Failed close");
-        exit(1);
-    }
     if (mq_close(serviceClientQueue) == -1)
     {
         perror("Failed close");
@@ -191,5 +180,15 @@ int main()
         exit(1);
     }
 
+    if (mq_send(serviceServerQueue, "\0", 2, DIED_PRIO) == -1)
+    {
+        perror("Failed send");
+        exit(1);
+    }
+    if (mq_close(serviceServerQueue) == -1)
+    {
+        perror("Failed close");
+        exit(1);
+    }
     return 0;
 }

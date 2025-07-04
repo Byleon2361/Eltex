@@ -14,6 +14,7 @@
 
 #define NICKNAME_PRIO 2
 #define CLEAR_PRIO 3
+#define DIED_PRIO 4
 #define MAX_LENGTH_NICKNAME 20
 #define MAX_COUNT_NICKNAMES 16
 #define MSG_PRIO 1
