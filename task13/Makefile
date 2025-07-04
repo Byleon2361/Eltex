@@ -1,13 +1,10 @@
 all:server client
 
-server: server.o manager.o
-	gcc -Wall -o server server.o manager.o -lrt
+server: server.o 
+	gcc -Wall -o server server.o -lrt
 
 server.o: server.c
 	gcc -c -Wall server.c
-	
-manager.o: manager.c manager.h
-	gcc -c -Wall manager.c
 
 client: client.o view.o
 	gcc -Wall -o client client.o view.o -lrt -lcurses

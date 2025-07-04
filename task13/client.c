@@ -71,6 +71,7 @@ void* receiveMsgs(void* receiveQueueVoid)
 void sendMsgInChat(mqd_t* msgSndServerQueue)
 {
     char msg[MAX_LENGTH_MSG];
+    char msgWithNickname[MAX_LENGTH_MSG];
     while (1)
     {
         enterMsg(chat, msg, MAX_LENGTH_MSG);
@@ -78,7 +79,8 @@ void sendMsgInChat(mqd_t* msgSndServerQueue)
         {
             return;
         }
-        if (mq_send(*msgSndServerQueue, msg, strlen(msg), MSG_PRIO) == -1)
+        snprintf(msgWithNickname, MAX_LENGTH_MSG, "%s: %s",nickname ,msg);
+        if (mq_send(*msgSndServerQueue, msgWithNickname, strlen(msgWithNickname), MSG_PRIO) == -1)
         {
             perror("Failed send");
             exit(1);
@@ -140,7 +142,6 @@ int main()
     pthread_create(&nicknameThread, NULL, receiveNicknames, (void*)&serviceClientQueue);
     pthread_create(&msgThread, NULL, receiveMsgs, (void*)&msgClientQueue);
 
-
     if (mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_PRIO) == -1)
     {
         perror("Failed send");
@@ -148,7 +149,6 @@ int main()
     }
     
     sendMsgInChat(&msgSndServerQueue);
-
 
     pthread_cancel(nicknameThread);
     pthread_cancel(msgThread);
