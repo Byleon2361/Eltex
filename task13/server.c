@@ -7,17 +7,18 @@
 #include <sys/stat.h>
 #include <mqueue.h>
 
-#define MAX_COUNT_MESSAGES 8
-#define MAX_MSG_SIZE 20
-
 #define NICKNAME_PRIO 2
 #define CLEAR_PRIO 3
 #define DIED_PRIO 4
-#define MAX_LENGTH_NICKNAME 20
-#define MAX_COUNT_NICKNAMES 16
 #define MSG_PRIO 1
-#define MAX_LENGTH_MSG 256
+
+#define MAX_COUNT_MSGS_IN_QUEUE 10
+
 #define MAX_COUNT_MSGS 50
+#define MAX_LENGTH_MSG 256
+
+#define MAX_COUNT_NICKNAMES 16
+#define MAX_LENGTH_NICKNAME 20
 
 typedef struct client
 {
@@ -27,7 +28,36 @@ typedef struct client
 Client clients[MAX_COUNT_NICKNAMES]; 
 int countClients = 0;
 int countMsgs = 0;
+int isServerWork = 1;
+char **msgs;
+mqd_t msgServerQueue = 0;
+mqd_t serviceServerQueue = 0;
 
+void cleanAll()
+{
+  for(int i = 0; i < MAX_COUNT_MSGS; i++)
+  {
+    free(msgs[i]);
+  }
+  free(msgs);
+
+  if(mq_close(msgServerQueue) == -1)
+  {
+    perror("Failed close");
+  }
+  if(mq_unlink("/msgSndServerQueue") == -1)
+  {
+    perror("Failed unlink");
+  }
+  if(mq_close(serviceServerQueue) == -1)
+  {
+    perror("Failed close");
+  }
+  if(mq_unlink("/serviceServerQueue") == -1)
+  {
+    perror("Failed unlink");
+  }
+}
 void cleanClients()
 {
   int i =0;
@@ -67,7 +97,16 @@ void addClient(char *nickname)
   if(countClients >= MAX_COUNT_NICKNAMES)
   {
     perror("Failed - max count clients");
+    cleanAll();
     exit(EXIT_FAILURE);
+  }
+  for(int i = 0; i < countClients; i++)
+  {
+    if(strcmp(nickname,clients[i].nickname) == 0)
+    {
+      fprintf(stderr, "Nickname must be diffrent\n");
+      return;
+    }
   }
 
   strncpy(clients[countClients].nickname, nickname, MAX_LENGTH_NICKNAME);
@@ -77,7 +116,7 @@ void addClient(char *nickname)
 }
 void broadcastNicknames()
 {
-    printf("COUNT CLIENTS %d\n", countClients);
+  printf("COUNT CLIENTS %d\n", countClients);
   char bufNick[MAX_LENGTH_NICKNAME+1];
   for(int i = 0; i<countClients; i++)
   {
@@ -104,13 +143,14 @@ void *nicknameMain(void* args)
 {
 
   struct mq_attr attr;
-  attr.mq_maxmsg = MAX_COUNT_MESSAGES;
-  attr.mq_msgsize = MAX_MSG_SIZE;
+  attr.mq_maxmsg = MAX_COUNT_MSGS_IN_QUEUE;
+  attr.mq_msgsize = MAX_LENGTH_NICKNAME;
 
-  mqd_t serviceServerQueue = mq_open("/serviceServerQueue", O_RDONLY | O_CREAT, 0600, &attr);
+  serviceServerQueue = mq_open("/serviceServerQueue", O_RDONLY | O_CREAT, 0600, &attr);
   if (serviceServerQueue == -1)
   {
     perror("Failed create queue");
+    cleanAll();
     exit(EXIT_FAILURE);
   }
 
@@ -118,10 +158,11 @@ void *nicknameMain(void* args)
   unsigned int prio;
   while(1)
   {
-    if(mq_receive(serviceServerQueue, clientName, sizeof(clientName), &prio) == -1)
+    if(mq_receive(serviceServerQueue, clientName, MAX_LENGTH_NICKNAME, &prio) == -1)
     {
       perror("Failed serviceServerQueue receive");
-      exit(1);
+      cleanAll();
+      exit(EXIT_FAILURE);
     }
     if(prio != DIED_PRIO)
     {
@@ -135,16 +176,6 @@ void *nicknameMain(void* args)
     }
   }
 
-  if(mq_close(serviceServerQueue) == -1)
-  {
-    perror("Failed close");
-    exit(1);
-  }
-  if(mq_unlink("/serviceServerQueue") == -1)
-  {
-    perror("Failed unlink");
-    exit(1);
-  }
 }
 void broadcastMsgs(char **msgs)
 {
@@ -155,20 +186,17 @@ void broadcastMsgs(char **msgs)
     mqd_t msgQueue = mq_open(msgQueueName, O_WRONLY);
     if (msgQueue == -1)
     {
-      /* perror("Failed open msg queue"); */
-      /* exit(1); */
-      /* clients[i].isActive = 0; */
+      clients[i].isActive = 0;
     }
 
-      printf("count MSGS - %d\n", countMsgs);
+    printf("count MSGS - %d\n", countMsgs);
     mq_send(msgQueue, "\0", 2, CLEAR_PRIO);
     for(int j = 0; j<countMsgs; j++)
     {
-      mq_send(msgQueue, msgs[j], strlen(msgs[j]) + 1, NICKNAME_PRIO);
+      mq_send(msgQueue, msgs[j], strlen(msgs[j]) + 1, MSG_PRIO);
       printf("msg  -  %s\n", msgs[j]);
     }
     mq_close(msgQueue);
-    printf("%s\n", msgs[i]);
   }
   printf("------\n");
 }
@@ -176,50 +204,41 @@ void *msgMain(void* args)
 {
 
   struct mq_attr attr;
-  attr.mq_maxmsg = MAX_COUNT_MESSAGES;
-  attr.mq_msgsize = MAX_MSG_SIZE;
+  attr.mq_maxmsg = MAX_COUNT_MSGS_IN_QUEUE;
+  attr.mq_msgsize = MAX_LENGTH_MSG;
 
-  mqd_t msgServerQueue = mq_open("/msgSndServerQueue", O_RDONLY | O_CREAT, 0600, &attr);
+  msgServerQueue = mq_open("/msgSndServerQueue", O_RDONLY | O_CREAT, 0600, &attr);
   if (msgServerQueue == -1)
   {
     perror("Failed create queue");
+    cleanAll();
     exit(EXIT_FAILURE);
   }
 
-  char **msgs = malloc(sizeof(char*)*MAX_COUNT_MSGS);
+  msgs = malloc(sizeof(char*)*MAX_COUNT_MSGS);
   for(int i = 0; i < MAX_COUNT_MSGS; i++)
   {
-    msgs[i] = malloc(sizeof(char)*MAX_MSG_SIZE);
+    msgs[i] = malloc(sizeof(char)*MAX_LENGTH_MSG);
   }
 
   while(1)
   {
-    if(mq_receive(msgServerQueue, msgs[countMsgs], MAX_MSG_SIZE, NULL) == -1)
+    if(mq_receive(msgServerQueue, msgs[countMsgs], MAX_LENGTH_MSG, NULL) == -1)
     {
       perror("Failed msgServerQueue receive");
-      exit(1);
+      cleanAll();
+      exit(EXIT_FAILURE);
     }
     countMsgs++;
-
+    if(countMsgs >= MAX_COUNT_MSGS)
+    {
+      fprintf(stderr, "Limit messages\n");
+      cleanAll();
+      exit(EXIT_FAILURE);
+    }
     broadcastMsgs(msgs);
   }
 
-  for(int i = 0; i < MAX_COUNT_MSGS; i++)
-  {
-    free(msgs[i]);
-  }
-  free(msgs);
-
-  if(mq_close(msgServerQueue) == -1)
-  {
-    perror("Failed close");
-    exit(1);
-  }
-  if(mq_unlink("/msgSndServerQueue") == -1)
-  {
-    perror("Failed unlink");
-    exit(1);
-  }
 }
 int main()
 {
@@ -229,8 +248,23 @@ int main()
   pthread_create(&nicknameThread, NULL, nicknameMain, NULL);
   pthread_create(&msgThread, NULL, msgMain, NULL);
 
-  pthread_join(nicknameThread,NULL);
-  pthread_join(msgThread,NULL);
+  char buf[20];
+  while(isServerWork)
+  {
+    fgets(buf, 20, stdin);
+    if(strcmp(buf, "exit\n") == 0)
+    {
+      isServerWork = 0;
+    }
+  }
+
+  pthread_cancel(nicknameThread);
+  pthread_cancel(msgThread);
+
+  pthread_join(nicknameThread, NULL);
+  pthread_join(msgThread, NULL);
+
+  cleanAll();
 
   return 0;
 }

@@ -77,6 +77,7 @@ void printMsg(Chat* chat, char* msg)
     wscrl(chat->msgWin,1);
     y = maxY;
     waddstr(chat->msgWin, "\n");
+  wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
   }
   else
   {
@@ -86,7 +87,6 @@ void printMsg(Chat* chat, char* msg)
 
   waddstr(chat->msgWin, msg);
 
-  wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
   wrefresh(chat->msgWin);
 }
 void clearMsgWin(Chat* chat)
@@ -107,6 +107,7 @@ void printNickname(Chat* chat, char* nickname, char* currentNickname)
     wscrl(chat->nicknameWin,1);
     y = maxY;
     waddstr(chat->msgWin, "\n");
+  wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
   }
   else
   {
@@ -120,7 +121,6 @@ void printNickname(Chat* chat, char* nickname, char* currentNickname)
     mvwchgat(chat->nicknameWin, y, 1, width, A_REVERSE, 1, NULL);
   }
 
-  wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
   wrefresh(chat->nicknameWin);
 }
 void clearNicknameWin(Chat* chat)
@@ -138,34 +138,3 @@ void enterMsg(Chat* chat, char* msg, int maxLengthMsg)
   wborder(chat->inputWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
   wrefresh(chat->inputWin);
 }
-/* int main() */
-/* { */
-/*   initChat(); */
-/*   Chat *chat = createChat(); */
-
-/*   clearMsgWin(chat); */
-/*   clearNicknameWin(chat); */
-
-/*   printNickname(chat, "asd", "asd"); */
-/*   printNickname(chat, "qwe", "asd"); */
-/*   printNickname(chat, "zxc", "asd"); */
-
-/*   printMsg(chat, "Hello, world"); */
-/*   printMsg(chat, "Hi"); */
-/*   printMsg(chat, "How are you?"); */
-/*   printMsg(chat, "I am okay"); */
-
-/*   char buf[20]; */
-/*   while(1) */
-/*   { */
-/*    enterMsg(chat, buf, 20);  */
-/*     if(strcmp(buf, "exit") == 0) */
-/*     { */
-/*       break; */
-/*     } */
-/*    printMsg(chat, buf); */
-/*   } */
-/*   destroyChat(chat); */
-
-/*   return 0; */
-/* } */
