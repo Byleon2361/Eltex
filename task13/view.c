@@ -1,4 +1,5 @@
 #include "view.h"
+
 SCREEN* s = NULL;
 void initChat()
 {
