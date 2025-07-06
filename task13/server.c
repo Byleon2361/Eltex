@@ -195,7 +195,7 @@ void *nicknameMain(void* args)
       addClient(clientName);
       broadcastNicknames();
     }
-    else if(prio == CLEAR_PRIO)
+    else if(prio == DIED_PRIO)
     {
       cleanClients();
       broadcastNicknames();
