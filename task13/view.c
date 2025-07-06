@@ -123,7 +123,7 @@ void printMsg(Chat* chat, char* msg)
   int y = 0;
 
   int countOutputSymbols = 0;
-  int countLines = 0;
+  int count = 0;
   char* partOfMsg = malloc(sizeof(char)*(maxX+1));
   int msgLength = strlen(msg);
   while(countOutputSymbols < msgLength)
@@ -142,17 +142,17 @@ void printMsg(Chat* chat, char* msg)
 
     if(msgLength - countOutputSymbols < maxX)
     {
-      countLines = msgLength - countOutputSymbols;
+      count = msgLength - countOutputSymbols;
     }
     else
     {
-      countLines = maxX;
+      count = maxX;
     }
-    strncpy(partOfMsg, msg, countLines);
-    partOfMsg[countLines] = '\0';
+    strncpy(partOfMsg, msg, count);
+    partOfMsg[count] = '\0';
 
-    countOutputSymbols += countLines;
-    msg += countLines;
+    countOutputSymbols += count;
+    msg += count;
     waddstr(chat->msgWin, partOfMsg);
   }
       wclrtoeol(chat->msgWin);
@@ -162,7 +162,7 @@ void printMsg(Chat* chat, char* msg)
 }
 void printNickname(Chat* chat, char* nickname, char* currentNickname)
 {
-  int maxY = getmaxy(chat->msgWin)-2;
+  int maxY = getmaxy(chat->nicknameWin)-2;
   int maxX = getmaxx(chat->nicknameWin)-2;
   int x = 0;
   int y = 0;
@@ -171,7 +171,8 @@ void printNickname(Chat* chat, char* nickname, char* currentNickname)
   char* partOfNickname = malloc(sizeof(char)*(maxX+1));
   int nicknameLength = strlen(nickname);
   int isCurrent = 0;
-  int countLines = 0;
+  int count = 0;
+  int countLines= 0;
 
   if (strcmp(nickname, currentNickname) == 0)
   {
@@ -185,8 +186,6 @@ void printNickname(Chat* chat, char* nickname, char* currentNickname)
     {
       wscrl(chat->nicknameWin,1);
       y = maxY;
-      waddstr(chat->msgWin, "\n");
-      wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
     }
     else
     {
@@ -194,20 +193,28 @@ void printNickname(Chat* chat, char* nickname, char* currentNickname)
     }
     wmove(chat->nicknameWin, y, 1);
 
-    strncpy(partOfNickname, nickname, maxX);
-    countOutputSymbols += maxX;
-    nickname +=maxX;
+    if(nicknameLength - countOutputSymbols < maxX)
+    {
+      count = nicknameLength - countOutputSymbols;
+    }
+    else
+    {
+      count = maxX;
+    }
+    strncpy(partOfNickname, nickname, count);
+    partOfNickname[count] = '\0';
 
+    countOutputSymbols += count;
+    nickname += count;
     waddstr(chat->nicknameWin, partOfNickname);
-    countLines++;
-  }
+      wclrtoeol(chat->nicknameWin);
 if(isCurrent)
 {
-  for(int i = 0; i < countLines; i++)
-  {
-      mvwchgat(chat->nicknameWin, y-i, 1, maxX, A_REVERSE, 1, NULL);
-  }
+      mvwchgat(chat->nicknameWin, y, 1, maxX, A_REVERSE, 1, NULL);
 }
+    countLines++;
+  }
+      wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
   free(partOfNickname);
   wrefresh(chat->nicknameWin);
 }
