@@ -162,7 +162,6 @@ void enterNickname()
 
 void openServiceQueue()
 {
-
   struct mq_attr attrNickname;
   attrNickname.mq_maxmsg = MAX_COUNT_MSGS_IN_QUEUE;
   attrNickname.mq_msgsize = MAX_LENGTH_NICKNAME;
@@ -224,13 +223,13 @@ int main()
   pthread_create(&nicknameThread, NULL, receiveNicknames, (void*)&serviceClientQueue);
   pthread_create(&msgThread, NULL, receiveMsgs, (void*)&msgClientQueue);
 
-    if (mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_SET_PRIO) == -1)
-    {
-      perror("Failed send");
-      cleanAll();
-      exit(EXIT_FAILURE);
-    }
-    
+  if (mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_SET_PRIO) == -1)
+  {
+    perror("Failed send");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+
 
   sendMsgInChat(&msgSndServerQueue);
 

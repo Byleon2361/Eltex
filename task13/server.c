@@ -228,7 +228,6 @@ void broadcastMsgs(char **msgs)
 }
 void *msgMain(void* args)
 {
-
   struct mq_attr attr;
   attr.mq_maxmsg = MAX_COUNT_MSGS_IN_QUEUE;
   attr.mq_msgsize = MAX_LENGTH_MSG;

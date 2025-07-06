@@ -86,7 +86,7 @@ void enterMsg(Chat* chat, char* msg, int maxLengthMsg)
         mvwaddnstr(chat->inputWin, 1, 1, msg+(lineCount*maxX), maxX);
         waddstr(chat->inputWin, "\n");
       }
-        wborder(chat->inputWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+      wborder(chat->inputWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
     }
     else if(isprint(ch))
     {
@@ -155,8 +155,8 @@ void printMsg(Chat* chat, char* msg)
     msg += count;
     waddstr(chat->msgWin, partOfMsg);
   }
-      wclrtoeol(chat->msgWin);
-      wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+  wclrtoeol(chat->msgWin);
+  wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
   free(partOfMsg);
   wrefresh(chat->msgWin);
 }
@@ -207,14 +207,14 @@ void printNickname(Chat* chat, char* nickname, char* currentNickname)
     countOutputSymbols += count;
     nickname += count;
     waddstr(chat->nicknameWin, partOfNickname);
-      wclrtoeol(chat->nicknameWin);
-if(isCurrent)
-{
+    wclrtoeol(chat->nicknameWin);
+    if(isCurrent)
+    {
       mvwchgat(chat->nicknameWin, y, 1, maxX, A_REVERSE, 1, NULL);
-}
+    }
     countLines++;
   }
-      wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+  wborder(chat->nicknameWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
   free(partOfNickname);
   wrefresh(chat->nicknameWin);
 }
