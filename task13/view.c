@@ -123,6 +123,7 @@ void printMsg(Chat* chat, char* msg)
   int y = 0;
 
   int countOutputSymbols = 0;
+  int countLines = 0;
   char* partOfMsg = malloc(sizeof(char)*(maxX+1));
   int msgLength = strlen(msg);
   while(countOutputSymbols < msgLength)
@@ -132,8 +133,6 @@ void printMsg(Chat* chat, char* msg)
     {
       wscrl(chat->msgWin,1);
       y = maxY;
-      waddstr(chat->msgWin, "\n");
-      wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
     }
     else
     {
@@ -141,11 +140,23 @@ void printMsg(Chat* chat, char* msg)
     }
     wmove(chat->msgWin, y, 1);
 
-    strncpy(partOfMsg, msg, maxX);
-    countOutputSymbols += maxX;
-    msg +=maxX;
+    if(msgLength - countOutputSymbols < maxX)
+    {
+      countLines = msgLength - countOutputSymbols;
+    }
+    else
+    {
+      countLines = maxX;
+    }
+    strncpy(partOfMsg, msg, countLines);
+    partOfMsg[countLines] = '\0';
+
+    countOutputSymbols += countLines;
+    msg += countLines;
     waddstr(chat->msgWin, partOfMsg);
   }
+      wclrtoeol(chat->msgWin);
+      wborder(chat->msgWin, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
   free(partOfMsg);
   wrefresh(chat->msgWin);
 }
