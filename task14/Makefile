@@ -15,5 +15,8 @@ client.o: client.c
 view.o: view.c view.h
 	gcc -c -Wall view.c
 
+clear:
+	rm -rf /dev/shm/*
+	
 clean:
 	rm -rf server client *.o

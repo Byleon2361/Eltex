@@ -4,45 +4,64 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <mqueue.h>
+#include <sys/mman.h>
+#include <semaphore.h>
 
 #define MAX_LENGTH_TEXT 20
-#define MAX_COUNT_MESSAGES 8
-#define MAX_MSG_SIZE 20
 
 int main()
 {
-    char msgSnd[MAX_LENGTH_TEXT] = "Hi";
-    char msgRcv[MAX_LENGTH_TEXT];
+  char *str = "Hi";
+  int idshm = shm_open("/server", O_CREAT|O_RDWR, 0600);
+  if (idshm == -1)
+  {
+    perror("Failed create shared memory");
+    exit(EXIT_FAILURE);
+  }
+  ftruncate(idshm, MAX_LENGTH_TEXT);
+  char *msg = mmap(NULL, MAX_LENGTH_TEXT, PROT_READ|PROT_WRITE, MAP_SHARED, idshm, 0);
+  if(msg == MAP_FAILED)
+  {
+    perror("Failed allocate shared memory");
+    close(idshm);
+    shm_unlink("/server");
+    exit(EXIT_FAILURE);
+  }
 
-    struct mq_attr attr;
-    attr.mq_maxmsg = MAX_COUNT_MESSAGES;
-    attr.mq_msgsize = MAX_MSG_SIZE;
+  sem_t *idLockData = sem_open("/semLockData", O_CREAT|O_RDWR, 0600, 1);
+  if (idLockData == SEM_FAILED)
+  {
+    perror("Failed create semaphore");
+    munmap(msg, MAX_LENGTH_TEXT);
+    close(idshm);
+    shm_unlink("/server");
+    exit(EXIT_FAILURE);
+  }
+  sem_t *idWait = sem_open("/semWait", O_CREAT|O_RDWR, 0600, 0);
+  if (idWait == SEM_FAILED)
+  {
+    munmap(msg, MAX_LENGTH_TEXT);
+    close(idshm);
+    shm_unlink("/server");
+    sem_close(idLockData);
+    sem_unlink("/semLockData");
+    perror("Failed create semaphore");
+    exit(EXIT_FAILURE);
+  }
 
-    mqd_t idServer = mq_open("/toServer", O_RDWR | O_CREAT, 0600, &attr);
-    if (idServer == -1)
-    {
-        perror("Failed create queue");
-        exit(EXIT_FAILURE);
-    }
-    mqd_t idClient = mq_open("/toClient", O_RDWR | O_CREAT, 0600, &attr);
-    if (idServer == -1)
-    {
-        perror("Failed create queue");
-        exit(EXIT_FAILURE);
-    }
+  sem_wait(idLockData);
+  strncpy(msg, str, strlen(str));
+  sem_post(idLockData);
 
-    int prio = 1;
-    mq_send(idClient, msgSnd, strlen(msgSnd) + 1, prio);
+  sem_wait(idWait);
+  printf("%s\n", msg);
 
-    mq_receive(idServer, msgRcv, sizeof(msgRcv), NULL);
-
-    printf("%s\n", (char*)msgRcv);
-
-    mq_close(idServer);
-    mq_close(idClient);
-    mq_unlink("/toServer");
-    mq_unlink("/toClient");
-
-    return 0;
+  munmap(msg, MAX_LENGTH_TEXT);
+  close(idshm);
+  sem_close(idLockData);
+  sem_close(idWait);
+  shm_unlink("/server");
+  sem_unlink("/semLockData");
+  sem_unlink("/semWait");
+  return 0;
 }
