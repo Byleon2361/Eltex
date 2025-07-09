@@ -16,29 +16,45 @@
 #define MAX_COUNT_NICKNAMES 16
 #define MAX_LENGTH_NICKNAME 20
 
-char *nicknames; 
-char **msgs;
-char *nickname;
-int *countClients;
-int *isUsedNickname;
-
 Chat* chat;
 
-int shmMsg;
+char curNickname[MAX_LENGTH_NICKNAME]; 
+/* SHARED DATA */
+char *nicknames; 
+int *countClients;
+char *nickname; 
+int *isUsedNickname;
+
+char *msgs;
+int *countMsgs;
+
+/* SHARED MEMORY ID*/
 int shmNicknames;
-int shmNickname;
 int shmCountClients;
+int shmNickname;
 int shmIsUsedNickname;
 
-sem_t *semLockMsg;
+int shmMsgs;
+int shmCountMsgs;
+
+/* LOCK */
 sem_t *semLockNicknames;
 sem_t *semLockNickname;
 
+sem_t *semLockMsgs;
+sem_t *semLockMsg;
+
+/* WAIT */
+sem_t *semWaitUpdateNickname; //Сервер ожиданает пока все клиенты обновят информацию
+sem_t *semWaitOtherClients; //Клиент ожидает пока все клиенты обновят информацию
+sem_t *semWaitNickname; //Ожидание присоединения нового клиента
+sem_t *semWaitBroadcastNicknames; //Ожидание broadcast
+
+sem_t *semWaitUpdateMsg; 
+sem_t *semWaitOtherMsgs;
 sem_t *semWaitMsg;
-sem_t *semWaitUpdateNickname; //Ожидание пока все клиенты обновят информацию
-sem_t *semWaitOtherClients; //Ожидание пока все клиенты обновят информацию
-sem_t *semWaitNickname; //Ожидание нового клиента
-sem_t *semWaitBroadcast; //Ожидания broadcast
+sem_t *semWaitBroadcastMsgs;
+                         
 void cleanAll()
 {
   munmap(nicknames, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES);
@@ -47,137 +63,32 @@ void cleanAll()
   munmap(countClients, sizeof(int));
   munmap(isUsedNickname, sizeof(int));
 
-  close(shmMsg);
+  munmap(msgs, MAX_LENGTH_MSG*MAX_COUNT_MSGS);
+  munmap(countMsgs, sizeof(int));
+
+  /* SHM */
+  close(shmMsgs);
   close(shmNicknames);
   close(shmNickname);
 
-  sem_close(semLockMsg);
+  close(shmMsgs);
+  close(shmCountMsgs);
+
+  /* SEM */
   sem_close(semLockNicknames);
   sem_close(semLockNickname);
-  sem_close(semWaitMsg);
   sem_close(semWaitUpdateNickname);
   sem_close(semWaitOtherClients);
   sem_close(semWaitNickname);
-  sem_close(semWaitBroadcast);
+  sem_close(semWaitBroadcastNicknames);
+
+  sem_close(semLockMsgs);
+  sem_close(semLockMsg);
+  sem_close(semWaitUpdateMsg);
+  sem_close(semWaitOtherMsgs);
+  sem_close(semWaitMsg);
+  sem_close(semWaitBroadcastMsgs);
 }
-void* receiveNicknames(void *args)
-{
-  for(;;)
-  {
-    sem_wait(semWaitBroadcast);
-
-    clearNicknameWin(chat);
-    sem_wait(semLockNicknames);
-    for(int i = 0; i < *countClients; i++)
-    {
-      printNickname(chat, nicknames+i*MAX_LENGTH_NICKNAME, nickname);
-    }
-    sem_post(semLockNicknames);
-
-    sem_post(semWaitUpdateNickname); //подтверждаем получение данных
-    sem_wait(semWaitOtherClients); //ждем пока осталльные клиенты обновят данные
-  }
-/* ----------------------- */
-  /* mqd_t* receiveQueue = (mqd_t*)receiveQueueVoid; */
-  /* char clientName[MAX_LENGTH_NICKNAME]; */
-  /* unsigned int prio = 0; */
-  /* while (1) */
-  /* { */
-  /*   if (mq_receive(*receiveQueue, clientName, MAX_LENGTH_NICKNAME, &prio) == -1) */
-  /*   { */
-  /*     perror("Failed receive"); */
-  /*     cleanAll(); */
-  /*     exit(EXIT_FAILURE); */
-  /*   } */
-  /*   if (prio == NICKNAME_SET_PRIO) */
-  /*   { */
-  /*     printNickname(chat, clientName, nickname); */
-  /*   } */
-  /*   else if (prio == CLEAR_PRIO) */
-  /*   { */
-  /*     clearNicknameWin(chat); */
-  /*   } */
-  /* } */
-}
-/* void* receiveMsgs(void* args) */
-/* { */
-/*   mqd_t* receiveQueue = (mqd_t*)receiveQueueVoid; */
-/*   char msg[MAX_LENGTH_MSG]; */
-/*   unsigned int prio = 0; */
-/*   while (1) */
-/*   { */
-/*     if (mq_receive(*receiveQueue, msg, MAX_LENGTH_MSG, &prio) == -1) */
-/*     { */
-/*       perror("Failed receive"); */
-/*       cleanAll(); */
-/*       exit(EXIT_FAILURE); */
-/*     } */
-/*     if (prio == MSG_PRIO) */
-/*     { */
-/*       printMsg(chat, msg); */
-/*     } */
-/*     else if (prio == CLEAR_PRIO) */
-/*     { */
-/*       clearMsgWin(chat); */
-/*     } */
-/*   } */
-/* } */
-/* void sendMsgInChat(mqd_t* msgSndServerQueue) */
-/* { */
-/*   char msg[MAX_LENGTH_MSG]; */
-/*   char msgWithNickname[MAX_LENGTH_MSG]; */
-/*   while (1) */
-/*   { */
-/*     enterMsg(chat, msg, MAX_LENGTH_MSG); */
-/*     if (strcmp(msg, "exit") == 0) */
-/*     { */
-/*       return; */
-/*     } */
-/*     snprintf(msgWithNickname, MAX_LENGTH_MSG, "%s: %s",nickname ,msg); */
-/*     if (mq_send(*msgSndServerQueue, msgWithNickname, strlen(msgWithNickname)+1, MSG_PRIO) == -1) */
-/*     { */
-/*       perror("Failed send"); */
-/*       cleanAll(); */
-/*       exit(EXIT_FAILURE); */
-/*     } */
-/*   } */
-/* } */
-void enterNickname()
-{
-    printf("Enter nickname\n");
-    /* sem_wait(semLockNickname); */
-    scanf("%19s", nickname);
-    /* fgets(nickname, MAX_LENGTH_NICKNAME, stdin); */
-    /* sem_post(semLockNickname); */
-    sem_post(semWaitNickname);
-
-    /* ------------------ */
-  /* char tempBuf[MAX_LENGTH_NICKNAME]; */
-  /* unsigned int prio = NICKNAME_NO_CONFIRM_PRIO; */
-  /* while(prio == NICKNAME_NO_CONFIRM_PRIO) */
-  /* { */
-  /*   printf("Enter nickname\n"); */
-  /*   scanf("%19s", nickname); */
-  /*   if (mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_CHECK_PRIO) == -1) */
-  /*   { */
-  /*     perror("Failed send"); */
-  /*     cleanAll(); */
-  /*     exit(EXIT_FAILURE); */
-  /*   } */
-
-  /*   if(mq_receive(serviceServerQueue, tempBuf, MAX_LENGTH_NICKNAME, &prio) == -1) */
-  /*   { */
-  /*     perror("Failed serviceServerQueue receive"); */
-  /*     cleanAll(); */
-  /*     exit(EXIT_FAILURE); */
-  /*   } */
-  /*   if(prio == NICKNAME_NO_CONFIRM_PRIO) */
-  /*   { */
-  /*     printf("NICKNAME ALREADY USED\n"); */
-  /*   } */
-  /* } */
-}
-
 void initShmNicknames()
 {
   shmNicknames = shm_open("/shmNicknames", O_RDWR, 0);
@@ -269,93 +180,169 @@ void initShmNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
-  semWaitBroadcast = sem_open("/semWaitBroadcast", O_RDWR);
-  if (semWaitBroadcast == SEM_FAILED)
+  semWaitBroadcastNicknames = sem_open("/semWaitBroadcastNicknames", O_RDWR);
+  if (semWaitBroadcastNicknames == SEM_FAILED)
   {
     perror("Failed create wait semaphore");
     cleanAll();
     exit(EXIT_FAILURE);
   }
-  /* --------------------- */
-  /* struct mq_attr attrNickname; */
-  /* attrNickname.mq_maxmsg = MAX_COUNT_MSGS_IN_QUEUE; */
-  /* attrNickname.mq_msgsize = MAX_LENGTH_NICKNAME; */
-
-  /* serviceServerQueue = mq_open("/serviceServerQueue", O_RDWR); */
-  /* if (serviceServerQueue == -1) */
-  /* { */
-  /*   perror("Failed open service queue"); */
-  /*   cleanAll(); */
-  /*   exit(EXIT_FAILURE); */
-  /* } */
-  /* enterNickname(); */
-
-  /* strcat(bufNick, nickname); */
-  /* serviceClientQueue = mq_open(bufNick, O_RDONLY | O_CREAT, 0600, &attrNickname); */
-  /* if (serviceClientQueue == -1) */
-  /* { */
-  /*   perror("Failed create service queue"); */
-  /*   cleanAll(); */
-  /*   exit(EXIT_FAILURE); */
-  /* } */
 }
-/* void openMsgQueue() */
-/* { */
-/*   struct mq_attr attrMsg; */
-/*   attrMsg.mq_maxmsg = MAX_COUNT_MSGS_IN_QUEUE; */
-/*   attrMsg.mq_msgsize = MAX_LENGTH_MSG; */
+void enterNickname()
+{
+    printf("Enter nickname\n");
+    /* sem_wait(semLockNickname); */
+    scanf("%19s", curNickname);
+    /* strncpy(curNickname, nickname, MAX_LENGTH_NICKNAME); */
+    /* sem_post(semLockNickname); */
+    /* sem_post(semWaitNickname); */
+}
+void* receiveNicknames(void *args)
+{
+  for(;;)
+  {
+    sem_wait(semWaitBroadcastNicknames);
 
-/*   msgSndServerQueue = mq_open("/msgSndServerQueue", O_WRONLY); */
-/*   if (msgSndServerQueue == -1) */
-/*   { */
-/*     perror("Failed open msg queue"); */
-/*     cleanAll(); */
-/*     exit(EXIT_FAILURE); */
-/*   } */
+    clearNicknameWin(chat);
+    sem_wait(semLockNicknames);
+    for(int i = 0; i < *countClients; i++)
+    {
+      printNickname(chat, nicknames+i*MAX_LENGTH_NICKNAME, curNickname);
+    }
+    sem_post(semLockNicknames);
 
-/*   snprintf(msgQueueName, MAX_LENGTH_NICKNAME + 4, "/msg%s", nickname); */
-/*   msgClientQueue = mq_open(msgQueueName, O_RDONLY | O_CREAT, 0600, &attrMsg); */
-/*   if (msgClientQueue == -1) */
-/*   { */
-/*     perror("Failed create msg queue"); */
-/*     cleanAll(); */
-/*     exit(EXIT_FAILURE); */
-/*   } */
-/* } */
+    sem_post(semWaitUpdateNickname); //подтверждаем получение данных
+    sem_wait(semWaitOtherClients); //ждем пока осталльные клиенты обновят данные
+  }
+}
+void initShmMsgs()
+{
+  shmMsgs = shm_open("/shmMsgs", O_RDWR, 0);
+  if (shmMsgs == -1)
+  {
+    perror("Failed create msgs shared memory");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  msgs = mmap(NULL, MAX_LENGTH_MSG*MAX_COUNT_MSGS, PROT_READ|PROT_WRITE, MAP_SHARED, shmMsgs, 0);
+  shmCountMsgs = shm_open("/shmCountMsgs", O_RDWR, 0);
+  if (shmCountMsgs == -1)
+  {
+    perror("Failed create countMsgs shared memory");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  countMsgs = mmap(NULL, sizeof(int), PROT_READ|PROT_WRITE, MAP_SHARED, shmCountMsgs, 0);
+
+  semLockMsgs = sem_open("/semLockMsgs", O_RDWR);
+  if (semLockMsgs == SEM_FAILED)
+  {
+    perror("Failed create lock semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  semLockMsg = sem_open("/semLockMsg", O_RDWR);
+  if (semLockMsg == SEM_FAILED)
+  {
+    perror("Failed create lock semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  semWaitUpdateMsg = sem_open("/semWaitUpdateMsg", O_RDWR);
+  if (semWaitUpdateMsg == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  semWaitOtherMsgs = sem_open("/semWaitOtherMsgs", O_RDWR);
+  if (semWaitOtherMsgs == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  semWaitMsg = sem_open("/semWaitMsg", O_RDWR);
+  if (semWaitMsg == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  semWaitBroadcastMsgs = sem_open("/semWaitBroadcastMsgs", O_RDWR);
+  if (semWaitBroadcastMsgs == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+}
+void sendMsgInChat()
+{
+  char msg[MAX_LENGTH_MSG];
+  char msgWithNickname[MAX_LENGTH_MSG];
+  while (1)
+  {
+    enterMsg(chat, msg, MAX_LENGTH_MSG);
+    if (strcmp(msg, "exit") == 0)
+    {
+      return;
+    }
+    snprintf(msgWithNickname, MAX_LENGTH_MSG, "%s: %s",curNickname ,msg);
+    sem_wait(semLockMsgs);
+    strncpy(msgs+(*countMsgs * MAX_LENGTH_MSG), msgWithNickname, MAX_LENGTH_MSG);
+    sem_post(semLockMsgs);
+
+    sem_post(semWaitMsg);
+    /* sleep(1); */
+  }
+}
+void* receiveMsgs(void* args)
+{
+  for(;;)
+  {
+    sem_wait(semWaitBroadcastMsgs);
+
+    clearMsgWin(chat);
+    sem_wait(semLockMsgs);
+    for(int i = 0; i < *countMsgs; i++)
+    {
+      printMsg(chat, msgs+i*MAX_LENGTH_MSG);
+    }
+    sem_post(semLockMsgs);
+
+    sem_post(semWaitUpdateMsg); //подтверждаем получение данных
+    sem_wait(semWaitOtherMsgs); //ждем пока осталльные клиенты обновят данные
+  }
+}
 int main()
 {
   initShmNicknames();
+  initShmMsgs();
   enterNickname();
-  /* openMsgQueue(); */
 
   initChat();
   chat = createChat();
   refreshChat(chat);
-  getchar();
-
 
   pthread_t nicknameThread;
-  /* pthread_t msgThread; */
+  pthread_t msgThread;
 
   pthread_create(&nicknameThread, NULL, receiveNicknames, NULL);
-  /* pthread_create(&msgThread, NULL, receiveMsgs, (void*)&msgClientQueue); */
+  pthread_create(&msgThread, NULL, receiveMsgs, NULL);
 
-  /* if (mq_send(serviceServerQueue, nickname, strlen(nickname) + 1, NICKNAME_SET_PRIO) == -1) */
-  /* { */
-  /*   perror("Failed send"); */
-  /*   cleanAll(); */
-  /*   exit(EXIT_FAILURE); */
-  /* } */
+  sem_wait(semLockNickname);
+  strncpy(nickname, curNickname, MAX_LENGTH_NICKNAME);
+  sem_post(semLockNickname);
+  sem_post(semWaitNickname);
 
-  for(;;);
-
-  /* sendMsgInChat(&msgSndServerQueue); */
+  sendMsgInChat();
 
   pthread_cancel(nicknameThread);
-  /* pthread_cancel(msgThread); */
+  pthread_cancel(msgThread);
 
   pthread_join(nicknameThread,NULL);
-  /* pthread_join(msgThread, NULL); */
+  pthread_join(msgThread, NULL);
 
   destroyChat(chat);
   cleanAll();
