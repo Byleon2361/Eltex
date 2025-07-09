@@ -15,23 +15,22 @@ int main()
   int idshm = shm_open("/server", O_RDWR, 0);
   if (idshm == -1)
   {
-    perror("Failed create shared memory");
+    perror("Failed open shared memory");
     exit(EXIT_FAILURE);
   }
-  ftruncate(idshm, MAX_LENGTH_TEXT);
   char *msg = mmap(NULL, MAX_LENGTH_TEXT, PROT_READ|PROT_WRITE, MAP_SHARED, idshm, 0);
 
   sem_t *idLockData = sem_open("/semLockData", O_RDWR);
   if (idLockData == SEM_FAILED)
   {
-    perror("Failed create semaphore");
+    perror("Failed open semaphore");
     close(idshm);
     exit(EXIT_FAILURE);
   }
   sem_t *idWait = sem_open("/semWait", O_RDWR);
   if (idWait == SEM_FAILED)
   {
-    perror("Failed create semaphore");
+    perror("Failed open semaphore");
     sem_close(idLockData);
     close(idshm);
     exit(EXIT_FAILURE);
