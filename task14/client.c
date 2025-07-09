@@ -33,11 +33,12 @@ int shmIsUsedNickname;
 sem_t *semLockMsg;
 sem_t *semLockNicknames;
 sem_t *semLockNickname;
-sem_t *semWaitMsg;
-sem_t *semWaitNicknames;
-sem_t *semWaitNickname;
-sem_t *semWaitBroadcast;
 
+sem_t *semWaitMsg;
+sem_t *semWaitUpdateNickname; //Ожидание пока все клиенты обновят информацию
+sem_t *semWaitOtherClients; //Ожидание пока все клиенты обновят информацию
+sem_t *semWaitNickname; //Ожидание нового клиента
+sem_t *semWaitBroadcast; //Ожидания broadcast
 void cleanAll()
 {
   munmap(nicknames, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES);
@@ -54,25 +55,27 @@ void cleanAll()
   sem_close(semLockNicknames);
   sem_close(semLockNickname);
   sem_close(semWaitMsg);
-  sem_close(semWaitNicknames);
+  sem_close(semWaitUpdateNickname);
+  sem_close(semWaitOtherClients);
   sem_close(semWaitNickname);
   sem_close(semWaitBroadcast);
 }
 void* receiveNicknames(void *args)
 {
-  int i;
   for(;;)
   {
-    i = 0;
     sem_wait(semWaitBroadcast);
 
+    clearNicknameWin(chat);
     sem_wait(semLockNicknames);
-    /* while(nickname[i] != NULL) */
-    /* { */
-      printNickname(chat, nicknames, nickname);
-    /*   i++; */
-    /* } */
+    for(int i = 0; i < *countClients; i++)
+    {
+      printNickname(chat, nicknames+i*MAX_LENGTH_NICKNAME, nickname);
+    }
     sem_post(semLockNicknames);
+
+    sem_post(semWaitUpdateNickname); //подтверждаем получение данных
+    sem_wait(semWaitOtherClients); //ждем пока осталльные клиенты обновят данные
   }
 /* ----------------------- */
   /* mqd_t* receiveQueue = (mqd_t*)receiveQueueVoid; */
@@ -245,8 +248,15 @@ void initShmNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
-  semWaitNicknames = sem_open("/semWaitNicknames", O_RDWR);
-  if (semWaitNicknames == SEM_FAILED)
+  semWaitUpdateNickname = sem_open("/semWaitUpdateNickname", O_RDWR);
+  if (semWaitUpdateNickname == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  semWaitOtherClients = sem_open("/semWaitOtherClients", O_RDWR);
+  if (semWaitOtherClients == SEM_FAILED)
   {
     perror("Failed create wait semaphore");
     cleanAll();
@@ -260,7 +270,7 @@ void initShmNicknames()
     exit(EXIT_FAILURE);
   }
   semWaitBroadcast = sem_open("/semWaitBroadcast", O_RDWR);
-  if (semWaitNicknames == SEM_FAILED)
+  if (semWaitBroadcast == SEM_FAILED)
   {
     perror("Failed create wait semaphore");
     cleanAll();

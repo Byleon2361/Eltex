@@ -31,8 +31,10 @@ int shmIsUsedNickname;
 sem_t *semLockMsg;
 sem_t *semLockNicknames;
 sem_t *semLockNickname;
+
 sem_t *semWaitMsg;
-sem_t *semWaitNicknames;
+sem_t *semWaitUpdateNickname; //Ожидание пока все клиенты обновят информацию
+sem_t *semWaitOtherClients;
 sem_t *semWaitNickname;
 sem_t *semWaitBroadcast;
 
@@ -59,8 +61,10 @@ void cleanAll()
   sem_unlink("/semLockNickname");
   sem_close(semWaitMsg);
   sem_unlink("/semWaitMsg");
-  sem_close(semWaitNicknames);
-  sem_unlink("/semWaitNicknames");
+  sem_close(semWaitUpdateNickname);
+  sem_unlink("/semWaitUpdateNickname");
+  sem_close(semWaitOtherClients);
+  sem_unlink("/semWaitOtherClients");
   sem_close(semWaitNickname);
   sem_unlink("/semWaitNickname");
   sem_close(semWaitBroadcast);
@@ -110,8 +114,8 @@ void addClient(char *nickname)
   }
 
   printf("%s\n", nickname);
-  strncpy(nicknames+(*countClients), nickname, MAX_LENGTH_NICKNAME);
-  printf("nicknames[%d] = %s\n", *countClients ,nicknames+(*countClients));
+  strncpy(nicknames+(*countClients * MAX_LENGTH_NICKNAME), nickname, MAX_LENGTH_NICKNAME);
+  printf("nicknames[%d] = %s\n", *countClients ,nicknames+(*countClients * MAX_LENGTH_NICKNAME));
   (*countClients)++;
 }
 /* void broadcastNicknames() */
@@ -222,8 +226,15 @@ void *nicknameMain(void* args)
     cleanAll();
     exit(EXIT_FAILURE);
   }
-  semWaitNicknames = sem_open("/semWaitNicknames", O_CREAT|O_RDWR, 0600, 0);
-  if (semWaitNicknames == SEM_FAILED)
+  semWaitUpdateNickname = sem_open("/semWaitUpdateNickname", O_CREAT|O_RDWR, 0600, 0);
+  if (semWaitUpdateNickname == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  semWaitOtherClients = sem_open("/semWaitOtherClients", O_CREAT|O_RDWR, 0600, 0);
+  if (semWaitOtherClients == SEM_FAILED)
   {
     perror("Failed create wait semaphore");
     cleanAll();
@@ -237,27 +248,38 @@ void *nicknameMain(void* args)
     exit(EXIT_FAILURE);
   }
   semWaitBroadcast = sem_open("/semWaitBroadcast", O_CREAT|O_RDWR, 0600, 0);
-  if (semWaitNicknames == SEM_FAILED)
+  if (semWaitBroadcast == SEM_FAILED)
   {
     perror("Failed create wait semaphore");
     cleanAll();
     exit(EXIT_FAILURE);
   }
 
+  int curCount = 0;
   for(;;)
   {
     sem_wait(semWaitNickname); //ждем пока поступят сообщения
 
-    /* sem_wait(semLockNicknames); */
+    sem_wait(semLockNicknames);
     /* cleanClients(); */
     /* checkNickname(); */
     addClient(nickname);
-    /* sem_post(semLockNicknames); */
+    curCount = *countClients;
+    sem_post(semLockNicknames);
 
-    /* for(int i = 0; i < *countClients; i++) */
-    /* { */
+    printf("%d\n", curCount);
+    for(int i = 0; i < curCount; i++)
+    {
       sem_post(semWaitBroadcast); //разблокируем семафоры на стороне клиентов
-    /* } */
+    }
+    for(int i = 0; i < curCount; i++)
+    {
+      sem_wait(semWaitUpdateNickname);
+    }
+    for(int i = 0; i < curCount; i++)
+    {
+      sem_post(semWaitOtherClients);
+    }
   }
   
   /* --------------------------- */
