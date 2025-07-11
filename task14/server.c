@@ -50,6 +50,7 @@ sem_t *semWaitOtherMsgs;
 sem_t *semWaitMsg;
 sem_t *semWaitBroadcastMsgs;
 
+
 void cleanAll()
 {
   munmap(nicknames, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES);
@@ -155,7 +156,7 @@ void addClient(char *nickname)
   printf("nicknames[%d] = %s\n", *countClients ,nicknames+(*countClients * MAX_LENGTH_NICKNAME));
   (*countClients)++;
 }
-void *nicknameMain(void* args)
+void initShmNicknames()
 {
   shmNicknames = shm_open("/shmNicknames", O_CREAT|O_RDWR, 0600);
   if (shmNicknames == -1)
@@ -222,8 +223,9 @@ void *nicknameMain(void* args)
     cleanAll();
     exit(EXIT_FAILURE);
   }
-
-  /* semaphores */
+}
+void initSemNicknames()
+{
   semLockNicknames = sem_open("/semLockNicknames", O_CREAT|O_RDWR, 0600, 1);
   if (semLockNicknames == SEM_FAILED)
   {
@@ -266,6 +268,11 @@ void *nicknameMain(void* args)
     cleanAll();
     exit(EXIT_FAILURE);
   }
+}
+void *nicknameMain(void* args)
+{
+  initShmNicknames();
+  initSemNicknames();
 
   int curCount = 0;
   for(;;)
@@ -294,7 +301,7 @@ void *nicknameMain(void* args)
     }
   }
 }
-void *msgMain(void* args)
+void initShmMsgs()
 {
   shmMsgs = shm_open("/shmMsgs", O_CREAT|O_RDWR, 0600);
   if (shmMsgs == -1)
@@ -327,8 +334,9 @@ void *msgMain(void* args)
     exit(EXIT_FAILURE);
   }
   *countMsgs = 0;
-
-  /* semaphores */
+}
+void initSemMsgs()
+{
   semLockMsgs = sem_open("/semLockMsgs", O_CREAT|O_RDWR, 0600, 1);
   if (semLockMsgs == SEM_FAILED)
   {
@@ -371,13 +379,20 @@ void *msgMain(void* args)
     cleanAll();
     exit(EXIT_FAILURE);
   }
+}
+void *msgMain(void* args)
+{
+  initShmMsgs();
+  initSemMsgs();
 
   int curCountClients = 0;
   for(;;)
   {
     sem_wait(semWaitMsg); //ждем пока поступят сообщения
 
+    sem_wait(semLockMsgs);
     (*countMsgs)++;
+    sem_post(semLockMsgs);
 
     sem_wait(semLockNicknames);
     curCountClients = *countClients;

@@ -54,7 +54,9 @@ sem_t *semWaitUpdateMsg;
 sem_t *semWaitOtherMsgs;
 sem_t *semWaitMsg;
 sem_t *semWaitBroadcastMsgs;
-                         
+
+pthread_mutex_t mutexView = PTHREAD_MUTEX_INITIALIZER;
+
 void cleanAll()
 {
   munmap(nicknames, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES);
@@ -145,6 +147,9 @@ void initShmNicknames()
     exit(EXIT_FAILURE);
   }
 
+}
+void initSemNicknames()
+{
   semLockNicknames = sem_open("/semLockNicknames", O_RDWR);
   if (semLockNicknames == SEM_FAILED)
   {
@@ -188,6 +193,7 @@ void initShmNicknames()
     exit(EXIT_FAILURE);
   }
 }
+
 void enterNickname()
 {
     printf("Enter nickname\n");
@@ -203,11 +209,15 @@ void* receiveNicknames(void *args)
   {
     sem_wait(semWaitBroadcastNicknames);
 
+      pthread_mutex_lock(&mutexView);
     clearNicknameWin(chat);
+      pthread_mutex_unlock(&mutexView);
     sem_wait(semLockNicknames);
     for(int i = 0; i < *countClients; i++)
     {
+      pthread_mutex_lock(&mutexView);
       printNickname(chat, nicknames+i*MAX_LENGTH_NICKNAME, curNickname);
+      pthread_mutex_unlock(&mutexView);
     }
     sem_post(semLockNicknames);
 
@@ -234,6 +244,9 @@ void initShmMsgs()
   }
   countMsgs = mmap(NULL, sizeof(int), PROT_READ|PROT_WRITE, MAP_SHARED, shmCountMsgs, 0);
 
+}
+void initSemMsgs()
+{
   semLockMsgs = sem_open("/semLockMsgs", O_RDWR);
   if (semLockMsgs == SEM_FAILED)
   {
@@ -294,20 +307,34 @@ void sendMsgInChat()
     sem_post(semLockMsgs);
 
     sem_post(semWaitMsg);
-    /* sleep(1); */
   }
 }
 void* receiveMsgs(void* args)
 {
+    sem_wait(semLockMsgs);
+      pthread_mutex_lock(&mutexView);
+    clearMsgWin(chat);
+      pthread_mutex_unlock(&mutexView);
+    for(int i = 0; i < *countMsgs; i++)
+    {
+      pthread_mutex_lock(&mutexView);
+      printMsg(chat, msgs+i*MAX_LENGTH_MSG);
+      pthread_mutex_unlock(&mutexView);
+    }
+    sem_post(semLockMsgs);
   for(;;)
   {
     sem_wait(semWaitBroadcastMsgs);
 
-    clearMsgWin(chat);
     sem_wait(semLockMsgs);
+      pthread_mutex_lock(&mutexView);
+    clearMsgWin(chat);
+      pthread_mutex_unlock(&mutexView);
     for(int i = 0; i < *countMsgs; i++)
     {
+      pthread_mutex_lock(&mutexView);
       printMsg(chat, msgs+i*MAX_LENGTH_MSG);
+      pthread_mutex_unlock(&mutexView);
     }
     sem_post(semLockMsgs);
 
@@ -318,7 +345,9 @@ void* receiveMsgs(void* args)
 int main()
 {
   initShmNicknames();
+  initSemNicknames();
   initShmMsgs();
+  initSemMsgs();
   enterNickname();
 
   initChat();
