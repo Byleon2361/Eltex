@@ -21,8 +21,9 @@ Chat* chat;
 char curNickname[MAX_LENGTH_NICKNAME]; 
 /* SHARED DATA */
 char *nicknames; 
-int *countClients;
 char *nickname; 
+char *deleteNickname; 
+int *countClients;
 int *isUsedNickname;
 
 char *msgs;
@@ -32,6 +33,7 @@ int *countMsgs;
 int shmNicknames;
 int shmCountClients;
 int shmNickname;
+int shmDeleteNickname;
 int shmIsUsedNickname;
 
 int shmMsgs;
@@ -49,6 +51,7 @@ sem_t *semWaitUpdateNickname; //Сервер ожиданает пока все 
 sem_t *semWaitOtherClients; //Клиент ожидает пока все клиенты обновят информацию
 sem_t *semWaitNickname; //Ожидание присоединения нового клиента
 sem_t *semWaitBroadcastNicknames; //Ожидание broadcast
+sem_t *semWaitDeleteNickname; //Ожидание удаления ника
 
 sem_t *semWaitUpdateMsg; 
 sem_t *semWaitOtherMsgs;
@@ -61,6 +64,7 @@ void cleanAll()
 {
   munmap(nicknames, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES);
   munmap(nickname, MAX_LENGTH_NICKNAME);
+  munmap(deleteNickname, MAX_LENGTH_NICKNAME);
   munmap(msgs, MAX_LENGTH_MSG);
   munmap(countClients, sizeof(int));
   munmap(isUsedNickname, sizeof(int));
@@ -72,6 +76,7 @@ void cleanAll()
   close(shmMsgs);
   close(shmNicknames);
   close(shmNickname);
+  close(shmDeleteNickname);
 
   close(shmMsgs);
   close(shmCountMsgs);
@@ -117,6 +122,21 @@ void initShmNicknames()
     exit(EXIT_FAILURE);
   }
 
+  int shmDeleteNickname = shm_open("/shmDeleteNickname", O_RDWR, 0);
+  if (shmDeleteNickname == -1)
+  {
+    perror("Failed create shared memory");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  deleteNickname = mmap(NULL, MAX_LENGTH_NICKNAME, PROT_READ|PROT_WRITE, MAP_SHARED, shmDeleteNickname, 0);
+  if (deleteNickname == MAP_FAILED)
+  {
+    perror("Failed allocate shared memory");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+
   shmCountClients = shm_open("/shmCountClients", O_RDWR, 0);
   if (shmCountClients == -1)
   {
@@ -146,7 +166,6 @@ void initShmNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
-
 }
 void initSemNicknames()
 {
@@ -187,6 +206,13 @@ void initSemNicknames()
   }
   semWaitBroadcastNicknames = sem_open("/semWaitBroadcastNicknames", O_RDWR);
   if (semWaitBroadcastNicknames == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  semWaitDeleteNickname = sem_open("/semWaitDeleteNickname", O_RDWR);
+  if (semWaitDeleteNickname == SEM_FAILED)
   {
     perror("Failed create wait semaphore");
     cleanAll();
@@ -299,6 +325,12 @@ void sendMsgInChat()
     enterMsg(chat, msg, MAX_LENGTH_MSG);
     if (strcmp(msg, "exit") == 0)
     {
+      
+      strncpy(deleteNickname, curNickname, MAX_LENGTH_NICKNAME);
+      sem_post(semWaitDeleteNickname); 
+
+      sem_post(semWaitBroadcastNicknames);
+      sem_post(semWaitOtherClients);
       return;
     }
     snprintf(msgWithNickname, MAX_LENGTH_MSG, "%s: %s",curNickname ,msg);

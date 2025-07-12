@@ -17,6 +17,7 @@
 /* SHARED DATA */
 char *nicknames; 
 char *nickname; 
+char *deleteNickname; 
 int *countClients;
 int *isUsedNickname;
 
@@ -26,6 +27,7 @@ int *countMsgs;
 /* SHARED MEMORY ID*/
 int shmNicknames;
 int shmNickname;
+int shmDeleteNickname;
 int shmCountClients;
 int shmIsUsedNickname;
 
@@ -44,6 +46,7 @@ sem_t *semWaitUpdateNickname; //Сервер ожиданает пока все 
 sem_t *semWaitOtherClients; //Клиент ожидает пока все клиенты обновят информацию
 sem_t *semWaitNickname; //Ожидание присоединения нового клиента
 sem_t *semWaitBroadcastNicknames; //Ожидание broadcast
+sem_t *semWaitDeleteNickname; //Ожидание удаления ника
 
 sem_t *semWaitUpdateMsg; 
 sem_t *semWaitOtherMsgs;
@@ -55,6 +58,7 @@ void cleanAll()
 {
   munmap(nicknames, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES);
   munmap(nickname, MAX_LENGTH_NICKNAME);
+  munmap(deleteNickname, MAX_LENGTH_NICKNAME);
   munmap(msgs, MAX_LENGTH_MSG);
   munmap(countClients, sizeof(int));
   munmap(isUsedNickname, sizeof(int));
@@ -67,6 +71,8 @@ void cleanAll()
   shm_unlink("/shmNicknames");
   close(shmNickname);
   shm_unlink("/shmNickname");
+  close(shmDeleteNickname);
+  shm_unlink("/shmDeleteNickname");
   close(shmIsUsedNickname);
   shm_unlink("/shmIsUsedNickname");
   close(shmCountClients);
@@ -92,6 +98,8 @@ void cleanAll()
   sem_unlink("/semWaitNickname");
   sem_close(semWaitBroadcastNicknames);
   sem_unlink("/semWaitBroadcastNicknames");
+  sem_close(semWaitDeleteNickname);
+  sem_unlink("/semWaitDeleteNickname");
 
   /* SEM MSGS */
   sem_close(semLockMsgs);
@@ -108,40 +116,30 @@ void cleanAll()
   sem_close(semWaitBroadcastMsgs);
   sem_unlink("/semWaitBroadcastMsgs");
 }
-/* void cleanClients() */
-/* { */
-/*   int i =0; */
-/*   char bufNick[MAX_LENGTH_NICKNAME+1]; */
-/*   for(int j = 0; j<countClients; j++) */
-/*   { */
-/*     snprintf(bufNick, sizeof(bufNick), "/%s", clients[j].nickname); */
-/*     mqd_t client = mq_open(bufNick, O_WRONLY); */
-/*     if (client == -1) */
-/*     { */
-/*       printf("client %s - DIE\n", clients[j].nickname); */
-/*       clients[j].isActive = 0; */
-/*     } */
-/*     else */
-/*     { */
-/*       mq_close(client); */
-/*     } */
-/*   } */
-/*   while(i<countClients) */
-/*   { */
-/*     if(!clients[i].isActive) */
-/*     { */
-/*       for(int j =i; j<countClients-1; j++) */
-/*       { */
-/*         clients[j] = clients[j+1]; */
-/*       } */
-/*       countClients--; */
-/*     } */
-/*     else */
-/*     { */
-/*       i++; */
-/*     } */
-/*   } */
-/* } */
+void deleteClient()
+{
+  int i =0;
+  while(i<*countClients)
+  {
+    printf("nickname - %s\n", nicknames+i*MAX_LENGTH_NICKNAME);
+    printf("nicknameD - %s\n", deleteNickname);
+    if(strcmp(nicknames+i*MAX_LENGTH_NICKNAME, deleteNickname) == 0)
+    {
+      for(int j = i; j<*countClients-1; j++)
+      {
+        strncpy(nicknames+j*MAX_LENGTH_NICKNAME, nicknames+(j+1)*MAX_LENGTH_NICKNAME, MAX_LENGTH_NICKNAME);
+      }
+    printf("Count clients before  %d\n", *countClients);
+      (*countClients)--;
+    printf("Count clients after  %d\n", *countClients);
+    break;
+    }
+    else
+    {
+      i++;
+    }
+  }
+}
 void addClient(char *nickname)
 {
   if(*countClients >= MAX_COUNT_NICKNAMES)
@@ -153,6 +151,7 @@ void addClient(char *nickname)
 
   printf("%s\n", nickname);
   strncpy(nicknames+(*countClients * MAX_LENGTH_NICKNAME), nickname, MAX_LENGTH_NICKNAME);
+  nicknames[(*countClients*MAX_LENGTH_NICKNAME)+MAX_LENGTH_NICKNAME-1] = '\0';
   printf("nicknames[%d] = %s\n", *countClients ,nicknames+(*countClients * MAX_LENGTH_NICKNAME));
   (*countClients)++;
 }
@@ -190,6 +189,21 @@ void initShmNicknames()
     exit(EXIT_FAILURE);
   }
   /* memset(nickname, 0, MAX_LENGTH_NICKNAME); */
+  shmDeleteNickname = shm_open("/shmDeleteNickname", O_CREAT|O_RDWR, 0600);
+  if (shmDeleteNickname == -1)
+  {
+    perror("Failed create shared memory");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+  ftruncate(shmDeleteNickname, MAX_LENGTH_NICKNAME);
+  deleteNickname = mmap(NULL, MAX_LENGTH_NICKNAME, PROT_READ|PROT_WRITE, MAP_SHARED, shmDeleteNickname, 0);
+  if (deleteNickname == MAP_FAILED)
+  {
+    perror("Failed allocate shared memory");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
 
   shmCountClients = shm_open("/shmCountClients", O_CREAT|O_RDWR, 0600);
   if (shmCountClients == -1)
@@ -268,12 +282,16 @@ void initSemNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
+  semWaitDeleteNickname = sem_open("/semWaitDeleteNickname", O_CREAT|O_RDWR, 0600, 0);
+  if (semWaitDeleteNickname == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
 }
 void *nicknameMain(void* args)
 {
-  initShmNicknames();
-  initSemNicknames();
-
   int curCount = 0;
   for(;;)
   {
@@ -382,9 +400,6 @@ void initSemMsgs()
 }
 void *msgMain(void* args)
 {
-  initShmMsgs();
-  initSemMsgs();
-
   int curCountClients = 0;
   for(;;)
   {
@@ -417,13 +432,50 @@ void *msgMain(void* args)
     }
   }
 }
+void *deleteNicknameMain(void* args)
+{
+  int curCount = 0;
+  for(;;)
+  {
+    sem_wait(semWaitDeleteNickname); 
+
+    sem_wait(semLockNicknames);
+    deleteClient();
+    curCount = *countClients;
+    printf("Count clients after delete %d\n", curCount);
+    printf("delete nickname - %s\n", deleteNickname);
+    sem_post(semLockNicknames);
+
+    for(int i = 0; i < curCount; i++)
+    {
+      sem_post(semWaitBroadcastNicknames); //разблокируем семафоры на стороне клиентов
+    }
+    for(int i = 0; i < curCount; i++)
+    {
+      sem_wait(semWaitUpdateNickname);
+    }
+    for(int i = 0; i < curCount; i++)
+    {
+      sem_post(semWaitOtherClients);
+    }
+    /* sem_post(semWaitNickname); */
+
+  }
+}
 int main()
 {
   pthread_t nicknameThread;
   pthread_t msgThread;
+  pthread_t deleteNicknameThread;
+
+  initShmNicknames();
+  initSemNicknames();
+  initShmMsgs();
+  initSemMsgs();
 
   pthread_create(&nicknameThread, NULL, nicknameMain, NULL);
   pthread_create(&msgThread, NULL, msgMain, NULL);
+  pthread_create(&deleteNicknameThread, NULL, deleteNicknameMain, NULL);
 
   char buf[20];
   while(1)
