@@ -47,6 +47,7 @@ sem_t *semWaitOtherClients; //Клиент ожидает пока все кли
 sem_t *semWaitNickname; //Ожидание присоединения нового клиента
 sem_t *semWaitBroadcastNicknames; //Ожидание broadcast
 sem_t *semWaitDeleteNickname; //Ожидание удаления ника
+sem_t *semWaitCheck;
 
 sem_t *semWaitUpdateMsg; 
 sem_t *semWaitOtherMsgs;
@@ -100,6 +101,8 @@ void cleanAll()
   sem_unlink("/semWaitBroadcastNicknames");
   sem_close(semWaitDeleteNickname);
   sem_unlink("/semWaitDeleteNickname");
+  sem_close(semWaitCheck);
+  sem_unlink("/semWaitCheck");
 
   /* SEM MSGS */
   sem_close(semLockMsgs);
@@ -172,6 +175,7 @@ void initShmNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
+  memset(nicknames, 0, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES);
 
   shmNickname = shm_open("/shmNickname", O_CREAT|O_RDWR, 0600);
   if (shmNickname == -1)
@@ -237,6 +241,7 @@ void initShmNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
+  *isUsedNickname = 0;
 }
 void initSemNicknames()
 {
@@ -289,17 +294,47 @@ void initSemNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
+  semWaitCheck = sem_open("/semWaitCheck", O_CREAT|O_RDWR, 0600, 0);
+  if (semWaitCheck == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
+}
+int checkNickname(char* nickname)
+{
+    for(int i = 0; i < *countClients; i++)
+    {
+      if(strcmp(nicknames+i*MAX_LENGTH_NICKNAME, nickname) == 0)
+      {
+        *isUsedNickname = 1;
+        break;
+      }
+    }
+    if(*isUsedNickname == 1)
+    {
+      return 1;
+    }
+    return 0;
 }
 void *nicknameMain(void* args)
 {
   int curCount = 0;
   for(;;)
   {
-    sem_wait(semWaitNickname); //ждем пока поступят сообщения
+    sem_wait(semWaitNickname); //ждем пока поступит ник
 
     sem_wait(semLockNicknames);
-    /* cleanClients(); */
-    /* checkNickname(); */
+
+    if(checkNickname(nickname) == 1)
+    {
+      sem_post(semLockNicknames);
+      sem_post(semWaitCheck);
+      continue;
+    }
+    sem_post(semWaitCheck);
+
     addClient(nickname);
     curCount = *countClients;
     sem_post(semLockNicknames);
@@ -318,6 +353,7 @@ void *nicknameMain(void* args)
       sem_post(semWaitOtherClients);
     }
   }
+  return NULL;
 }
 void initShmMsgs()
 {
@@ -458,7 +494,6 @@ void *deleteNicknameMain(void* args)
     {
       sem_post(semWaitOtherClients);
     }
-    /* sem_post(semWaitNickname); */
 
   }
 }

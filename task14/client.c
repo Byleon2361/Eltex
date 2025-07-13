@@ -52,6 +52,7 @@ sem_t *semWaitOtherClients; //Клиент ожидает пока все кли
 sem_t *semWaitNickname; //Ожидание присоединения нового клиента
 sem_t *semWaitBroadcastNicknames; //Ожидание broadcast
 sem_t *semWaitDeleteNickname; //Ожидание удаления ника
+sem_t *semWaitCheck;
 
 sem_t *semWaitUpdateMsg; 
 sem_t *semWaitOtherMsgs;
@@ -218,16 +219,30 @@ void initSemNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
+  semWaitCheck = sem_open("/semWaitCheck", O_RDWR);
+  if (semWaitCheck == SEM_FAILED)
+  {
+    perror("Failed create wait semaphore");
+    cleanAll();
+    exit(EXIT_FAILURE);
+  }
 }
 
 void enterNickname()
 {
+    do
+    {
     printf("Enter nickname\n");
-    /* sem_wait(semLockNickname); */
-    scanf("%19s", curNickname);
-    /* strncpy(curNickname, nickname, MAX_LENGTH_NICKNAME); */
-    /* sem_post(semLockNickname); */
-    /* sem_post(semWaitNickname); */
+      scanf("%19s", curNickname);
+      *isUsedNickname =0;
+
+  sem_wait(semLockNickname);
+  strncpy(nickname, curNickname, MAX_LENGTH_NICKNAME);
+  sem_post(semLockNickname);
+  sem_post(semWaitNickname);
+
+      sem_wait(semWaitCheck);
+    } while(*isUsedNickname == 1);
 }
 void* receiveNicknames(void *args)
 {
@@ -391,11 +406,6 @@ int main()
 
   pthread_create(&nicknameThread, NULL, receiveNicknames, NULL);
   pthread_create(&msgThread, NULL, receiveMsgs, NULL);
-
-  sem_wait(semLockNickname);
-  strncpy(nickname, curNickname, MAX_LENGTH_NICKNAME);
-  sem_post(semLockNickname);
-  sem_post(semWaitNickname);
 
   sendMsgInChat();
 
