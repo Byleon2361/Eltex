@@ -1,10 +1,9 @@
 #include "view.h"
 #include <ctype.h>
 
-SCREEN* s = NULL;
 void initChat()
 {
-  s = newterm(NULL, stdout, stdin);
+  initscr();
 
   clear();
   noecho();
@@ -250,5 +249,4 @@ void destroyChat(Chat* chat)
   free(chat);
 
   endwin();
-  delscreen(s);
 }
