@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
-#define SIGINT 2
 int main()
 {
-  sigset_t sig;
-  sigemptyset(&sig);
-  sigaddset(&sig, SIGINT);
-  sigprocmask(SIG_BLOCK, &sig, NULL);
+  sigset_t set;
+  sigemptyset(&set);
+  sigaddset(&set, SIGINT);
+  sigprocmask(SIG_BLOCK, &set, NULL);
 
   for(;;)
   {

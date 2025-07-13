@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
-#define SIGUSR1 10
 void handler(int sig)
 {
   printf("Interupt signal SIGUSR1 - %d\n", sig);

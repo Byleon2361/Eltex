@@ -1,21 +1,18 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
-#define SIGUSR1 10
-void handler(int sig)
-{
-  printf("SIGUSR1\n");
-}
 int main()
 {
-  struct sigaction sigact;
-  sigact.sa_handler = handler;
+  sigset_t set;
+  sigemptyset(&set);
+  sigaddset(&set, SIGUSR1);
+  sigprocmask(SIG_BLOCK, &set, NULL);
 
-  sigaction(SIGUSR1,&sigact, NULL);
+  int sig = 0;
   for(;;)
   {
-    printf("loop\n");
-    sleep(1);
+    sigwait(&set, &sig);
+    printf("Signal SIGUSR1 - %d\n", sig);
   }
   return 0;
 }
