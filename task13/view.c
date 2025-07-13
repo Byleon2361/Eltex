@@ -64,7 +64,6 @@ void enterMsg(Chat* chat, char* msg, int maxLengthMsg)
     {
       if(lineCount <= 0 && symCount <= 0)
       {
-        printMsg(chat, "NULL all wewe");
         lineCount = 0;
         symCount = 0;
         continue;

@@ -66,18 +66,18 @@ void cleanAll()
   munmap(nicknames, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES);
   munmap(nickname, MAX_LENGTH_NICKNAME);
   munmap(deleteNickname, MAX_LENGTH_NICKNAME);
-  munmap(msgs, MAX_LENGTH_MSG);
   munmap(countClients, sizeof(int));
   munmap(isUsedNickname, sizeof(int));
 
   munmap(msgs, MAX_LENGTH_MSG*MAX_COUNT_MSGS);
-  munmap(countMsgs, sizeof(int));
+  munmap(countMsgs,sizeof(int));
 
   /* SHM */
-  close(shmMsgs);
   close(shmNicknames);
+  close(shmCountClients);
   close(shmNickname);
   close(shmDeleteNickname);
+  close(shmIsUsedNickname);
 
   close(shmMsgs);
   close(shmCountMsgs);
@@ -89,6 +89,8 @@ void cleanAll()
   sem_close(semWaitOtherClients);
   sem_close(semWaitNickname);
   sem_close(semWaitBroadcastNicknames);
+  sem_close(semWaitDeleteNickname);
+  sem_close(semWaitCheck);
 
   sem_close(semLockMsgs);
   sem_close(semLockMsg);
@@ -108,7 +110,7 @@ void initShmNicknames()
   }
   nicknames = mmap(NULL, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES, PROT_READ|PROT_WRITE, MAP_SHARED, shmNicknames, 0);
 
-  int shmNickname = shm_open("/shmNickname", O_RDWR, 0);
+  shmNickname = shm_open("/shmNickname", O_RDWR, 0);
   if (shmNickname == -1)
   {
     perror("Failed create shared memory");
@@ -123,7 +125,7 @@ void initShmNicknames()
     exit(EXIT_FAILURE);
   }
 
-  int shmDeleteNickname = shm_open("/shmDeleteNickname", O_RDWR, 0);
+  shmDeleteNickname = shm_open("/shmDeleteNickname", O_RDWR, 0);
   if (shmDeleteNickname == -1)
   {
     perror("Failed create shared memory");
@@ -145,7 +147,7 @@ void initShmNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
-  countClients = mmap(NULL, MAX_LENGTH_NICKNAME, PROT_READ|PROT_WRITE, MAP_SHARED, shmCountClients, 0);
+  countClients = mmap(NULL, sizeof(int), PROT_READ|PROT_WRITE, MAP_SHARED, shmCountClients, 0);
   if (countClients == MAP_FAILED)
   {
     perror("Failed allocate shared memory");
@@ -160,7 +162,7 @@ void initShmNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
-  isUsedNickname = mmap(NULL, MAX_LENGTH_NICKNAME, PROT_READ|PROT_WRITE, MAP_SHARED, shmIsUsedNickname, 0);
+  isUsedNickname = mmap(NULL, sizeof(int), PROT_READ|PROT_WRITE, MAP_SHARED, shmIsUsedNickname, 0);
   if (isUsedNickname == MAP_FAILED)
   {
     perror("Failed allocate shared memory");

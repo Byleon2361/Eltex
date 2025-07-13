@@ -1,10 +1,9 @@
 #include "view.h"
 #include <ctype.h>
 
-SCREEN* s = NULL;
 void initChat()
 {
-  s = newterm(NULL, stdout, stdin);
+  initscr();
 
   clear();
   noecho();
@@ -64,7 +63,6 @@ void enterMsg(Chat* chat, char* msg, int maxLengthMsg)
     {
       if(lineCount <= 0 && symCount <= 0)
       {
-        printMsg(chat, "NULL all wewe");
         lineCount = 0;
         symCount = 0;
         continue;
@@ -251,5 +249,4 @@ void destroyChat(Chat* chat)
   free(chat);
 
   endwin();
-  delscreen(s);
 }

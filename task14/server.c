@@ -60,7 +60,6 @@ void cleanAll()
   munmap(nicknames, MAX_LENGTH_NICKNAME*MAX_COUNT_NICKNAMES);
   munmap(nickname, MAX_LENGTH_NICKNAME);
   munmap(deleteNickname, MAX_LENGTH_NICKNAME);
-  munmap(msgs, MAX_LENGTH_MSG);
   munmap(countClients, sizeof(int));
   munmap(isUsedNickname, sizeof(int));
 
@@ -192,7 +191,7 @@ void initShmNicknames()
     cleanAll();
     exit(EXIT_FAILURE);
   }
-  /* memset(nickname, 0, MAX_LENGTH_NICKNAME); */
+
   shmDeleteNickname = shm_open("/shmDeleteNickname", O_CREAT|O_RDWR, 0600);
   if (shmDeleteNickname == -1)
   {
@@ -524,9 +523,11 @@ int main()
 
   pthread_cancel(nicknameThread);
   pthread_cancel(msgThread);
+  pthread_cancel(deleteNicknameThread);
 
   pthread_join(nicknameThread, NULL);
   pthread_join(msgThread, NULL);
+  pthread_join(deleteNicknameThread, NULL);
 
   cleanAll();
 
