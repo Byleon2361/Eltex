@@ -1,0 +1,12 @@
+*.o
+*.a
+*.so
+*.log
+localTcpClient 
+localTcpServer 
+localUdpClient 
+localUdpServer
+netTcpClient 
+netTcpServer 
+netUdpClient 
+netUdpServer 
