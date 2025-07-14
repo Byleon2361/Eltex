@@ -13,7 +13,10 @@ $(BIN): %: %.o
 $(OBJ): %.o: %.c 
 	$(CC) $(CFLAGS) -c $^
 
+clear:
+	rm localTcpPath localUdpPath netTcpPath netUdpPath
+
 clean:
-	rm -rf *.o $(BIN)
+	rm *.o $(BIN)
 
 .PHONY: all clean

@@ -10,3 +10,7 @@ netTcpClient
 netTcpServer 
 netUdpClient 
 netUdpServer 
+localTcpPath
+localUdpPath
+netTcpPath
+netUdpPath
