@@ -14,7 +14,7 @@ $(OBJ): %.o: %.c
 	$(CC) $(CFLAGS) -c $^
 
 clear:
-	rm localTcpPath localUdpPath netTcpPath netUdpPath
+	rm localTcpPath localUdpPathServer localUdpPathClient netTcpPath netUdpPath
 
 clean:
 	rm *.o $(BIN)

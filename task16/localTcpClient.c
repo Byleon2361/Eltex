@@ -28,8 +28,8 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  recv(fd, recvMsg, MAX_LENGTH_MSG, 0);
   send(fd, sendMsg, strlen(sendMsg)+1, 0);
+  recv(fd, recvMsg, MAX_LENGTH_MSG, 0);
 
   printf("%s\n", recvMsg);
 

@@ -42,8 +42,8 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  send(newFd, sendMsg, strlen(sendMsg)+1, 0);
   recv(newFd, recvMsg, MAX_LENGTH_MSG, 0);
+  send(newFd, sendMsg, strlen(sendMsg)+1, 0);
 
   printf("%s\n", recvMsg);
 
