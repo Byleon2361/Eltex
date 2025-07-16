@@ -4,6 +4,7 @@
 *.log
 client
 server
+tester
 
 simpleParallelTcpServer
 simpleParallelTcpClient
