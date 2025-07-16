@@ -1,0 +1,11 @@
+*.o
+*.a
+*.so
+*.log
+client
+server
+
+simpleParallelTcpServer
+simpleParallelTcpClient
+simpleParallelUdpServer
+simpleParallelUdpServer
