@@ -7,8 +7,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#define MAX_LENGTH_QUEUE_CLIENTS 1
+#include <signal.h>
 #define MAX_LENGTH_MSG 32
+#define MAX_LENGTH_QUEUE_CLIENTS 5
+
+int fd = 0;
+
 void *handleClient(void *newFdVoid)
 {
   char timeStr[MAX_LENGTH_MSG];
@@ -20,13 +24,25 @@ void *handleClient(void *newFdVoid)
 
   send(*newFd, timeStr, strlen(timeStr)+1, 0);
 
+  close(*newFd);
+
   return NULL;
+}
+void handlerSignal(int sig)
+{
+  close(fd);
+  exit(EXIT_SUCCESS);
 }
 int main()
 {
+  struct sigaction sigact;
+  sigact.sa_handler = handlerSignal;
+
+  sigaction(SIGTERM, &sigact, NULL);
+
   struct sockaddr_in server, client;
-  socklen_t lenAddr = sizeof(struct sockaddr_in*);
-  int fd = socket(AF_INET, SOCK_STREAM, 0);
+  socklen_t lenAddr = sizeof(struct sockaddr_in);
+  fd = socket(AF_INET, SOCK_STREAM, 0);
   if(fd == -1)
   {
     perror("Error create fd");

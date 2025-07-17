@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
   char nameServerProg[NAME_MAX];
   char nameClientProg[NAME_MAX];
   int countClients = 0;
+  int countSuccess = 0;
 
   if(argc != 4)
   {
@@ -49,6 +50,8 @@ int main(int argc, char *argv[])
     }
     else if(pidServer >0)
     {
+      sleep(1);
+      pid_t *allClientPids = malloc(countClients * sizeof(pid_t)); 
       for(int i = 0; i < countClients; i++)
       {
         pid_t pidClient = fork();
@@ -62,20 +65,46 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
           }
         }
-        else if(pidServer >0)
+        else if(pidClient > 0)
         {
-          wait(NULL);
-          kill(pidServer, SIGINT);
+          allClientPids[i] = pidClient;
+          usleep(100000);
+        }
+        else
+        {
+          perror("Error fork client");
+          exit(EXIT_FAILURE);
         }
       }
-      wait(NULL);
+      int status = 0;
+      for(int i = 0; i < countClients; i++)
+      {
+        waitpid(allClientPids[i], &status, 0);
+        if(WEXITSTATUS(status)&&WIFEXITED(status) == EXIT_SUCCESS)
+          countSuccess++;
+      }
+      free(allClientPids);
+      kill(pidServer, SIGTERM);
+      waitpid(pidServer, NULL, 0);
+      exit(EXIT_SUCCESS);
+    }
+    else
+    {
+      perror("Error fork server");
+      exit(EXIT_FAILURE);
     }
   }
-  else if(pid >0)
+  else if(pid > 0)
   {
-    wait(NULL);
+    waitpid(pid, NULL, 0);
     t = wtime() - t;
-    printf("Time service %d clients: %0.6lf sec\n", countClients, t);
+    printf("Time service %d clients: %0.6lf sec; count success: %d, count failed: %d\n", countClients, t, countSuccess, countClients-countSuccess);
+      exit(EXIT_SUCCESS);
+  }
+  else
+  {
+    perror("Error fork");
+    exit(EXIT_FAILURE);
   }
 
   return 0;

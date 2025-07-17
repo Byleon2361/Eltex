@@ -35,5 +35,7 @@ int main()
 
   printf("%s\n", rcvMsg);
 
+  close(fd);
+
   return 0;
 }
