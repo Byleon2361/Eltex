@@ -9,4 +9,4 @@ tester
 simpleParallelTcpServer
 simpleParallelTcpClient
 simpleParallelUdpServer
-simpleParallelUdpServer
+simpleParallelUdpClient

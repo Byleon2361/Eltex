@@ -1,4 +1,4 @@
-BIN := sipmpleParallelTcpServer simpleParallelTcpClient simpleParallelUdpServer simpleParallelUdpClient
+BIN := tester simpleParallelTcpServer simpleParallelTcpClient simpleParallelUdpServer simpleParallelUdpClient
 SRC := $(BIN:=.c)
 OBJ := $(BIN:=.o)
 
@@ -12,9 +12,6 @@ $(BIN): %: %.o
 
 $(OBJ): %.o: %.c 
 	$(CC) $(CFLAGS) -c $^
-
-# clear:
-#   rm 
 
 clean:
 	rm *.o $(BIN)
