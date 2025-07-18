@@ -18,6 +18,16 @@ int main()
     exit(EXIT_FAILURE);
   }
 
+  struct timeval timeout;
+  timeout.tv_sec = 5;
+  timeout.tv_usec = 0;
+  if(setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1)
+  {
+    perror("Error set socket option");
+    close(fd);
+    exit(EXIT_FAILURE);
+  }
+
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
   server.sin_family = AF_INET;

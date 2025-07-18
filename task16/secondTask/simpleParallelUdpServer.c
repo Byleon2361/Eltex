@@ -75,7 +75,7 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  int optval = 0;
+  int optval = 1;
   if(setsockopt(fdMainServer, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1)
   {
     perror("Error set socket option");
