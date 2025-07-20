@@ -9,54 +9,49 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #define MAX_LENGTH_MSG 32
+#define MAX_COUNT_THREADS 256
 #define MAX_LENGTH_QUEUE_CLIENTS 5
 
-int fdMainServer= 0;
-struct PthreadArgs 
+int fdMain = 0;
+struct server
 {
-  struct sockaddr_in server;
-
+  pthread_t serverThread;
   struct sockaddr_in client;
-  socklen_t clientLen;
+  int isUsing;
 };
+struct server servers[MAX_COUNT_THREADS];
 
-void *handleClient(void *pthreadArgs)
+void *handleClient(void *serverArg)
 {
   char timeStr[MAX_LENGTH_MSG];
-  struct PthreadArgs *args = (struct PthreadArgs *) pthreadArgs;
-  struct sockaddr_in newServer = (struct sockaddr_in) args->server;
-  struct sockaddr_in client = (struct sockaddr_in) args->client;
-  socklen_t clientLen = args->clientLen;
+  struct server *server = (struct server *)serverArg;
 
   int fd = socket(AF_INET, SOCK_DGRAM, 0);
   if(fd == -1)
   {
-    perror("Error create fdMainServer");
+    perror("Error create fd");
     exit(EXIT_FAILURE);
   }
 
-
-  if(bind(fd, (struct sockaddr *)&newServer, sizeof(struct sockaddr_in)) ==  -1)
+  for(;;)
   {
-    close(fd);
-    perror("Error sever create bind");
-    exit(EXIT_FAILURE);
+    time_t myTime = time(NULL);
+    struct tm *now = localtime(&myTime);
+    snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
+
+    sendto(fd, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&server->client, sizeof(server->client));
+    server->isUsing = 0;
   }
-
-  time_t myTime = time(NULL);
-  struct tm *now = localtime(&myTime);
-  snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
-
-  sendto(fd, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&client, clientLen);
-
-  free(pthreadArgs);
   close(fd);
-
   return NULL;
 }
 void handlerSignal(int sig)
 {
-  close(fdMainServer);
+  for(int i =0; i < MAX_COUNT_THREADS; i++)
+  {
+    pthread_cancel(servers[i].serverThread);
+  }
+  close(fdMain);
   exit(EXIT_SUCCESS);
 }
 int main()
@@ -65,65 +60,62 @@ int main()
   sigact.sa_handler = handlerSignal;
 
   sigaction(SIGTERM, &sigact, NULL);
-  sigaction(SIGINT, &sigact, NULL);
 
-  struct sockaddr_in server;
-  fdMainServer = socket(AF_INET, SOCK_DGRAM, 0);
-  if(fdMainServer == -1)
+  struct sockaddr_in server, client;
+  socklen_t lenAddr = sizeof(struct sockaddr_in);
+  fdMain = socket(AF_INET, SOCK_DGRAM, 0);
+  if(fdMain == -1)
   {
-    perror("Error create fdMainServer");
+    perror("Error create fd");
     exit(EXIT_FAILURE);
   }
-
   int optval = 1;
-  if(setsockopt(fdMainServer, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1)
+  if(setsockopt(fdMain, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1)
   {
     perror("Error set socket option");
-    close(fdMainServer);
+    close(fdMain);
     exit(EXIT_FAILURE);
   }
 
-  int port = 7777;
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
   server.sin_family = AF_INET;
-  server.sin_port = htons(port);
+  server.sin_port = htons(7777);
   server.sin_addr = ip;
 
-  if(bind(fdMainServer, (struct sockaddr *)&server, sizeof(server)) ==  -1)
+  if(bind(fdMain, (struct sockaddr *)&server, sizeof(server)) ==  -1)
   {
-    close(fdMainServer);
-    perror("Error mainServer create bind");
+    close(fdMain);
+    perror("Error server create bind");
     exit(EXIT_FAILURE);
   }
 
+  for(int i = 0; i < MAX_COUNT_THREADS; i++)
+  {
+    servers[i].isUsing = 0;
+    if(pthread_create(&servers[i].serverThread, NULL, handleClient, (void*)&servers[i]) != 0)
+    {
+      close(fdMain);
+      perror("Error create thread");
+      exit(EXIT_FAILURE);
+    }
+  }
   for(;;)
   {
     struct sockaddr_in client;
     socklen_t clientLen = sizeof(client);
-    char recvMsg[10];
-    recvfrom(fdMainServer, recvMsg, MAX_LENGTH_MSG, 0, (struct sockaddr *)&client, &clientLen);
+    char buf[3];
+    recvfrom(fdMain, buf, 3, 0, (struct sockaddr *)&client, &clientLen);
 
-    struct sockaddr_in newServer;
-    port++;
-    if(port > 65535) port = 7778;
-    newServer.sin_family = AF_INET;
-    newServer.sin_port = htons(port);
-    newServer.sin_addr = ip;
-
-    struct PthreadArgs *pthreadArgs = malloc(sizeof(struct PthreadArgs));
-    pthreadArgs->server = newServer;
-    pthreadArgs->client = client;
-    pthreadArgs->clientLen = clientLen;
-
-    pthread_t newServerThread;
-    if(pthread_create(&newServerThread, NULL, handleClient, (void*)pthreadArgs) != 0)
+    for(int i = 0; i < MAX_COUNT_THREADS; i++)
     {
-      free(pthreadArgs);
-      continue;
+      if(!servers[i].isUsing)
+      {
+        servers[i].client = client;
+        servers[i].isUsing = 1;
+        break;
+      }
     }
-
-    pthread_detach(newServerThread);
   }
   return 0;
 }
