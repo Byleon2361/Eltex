@@ -61,8 +61,8 @@ int main()
 
   sigaction(SIGTERM, &sigact, NULL);
 
-  struct sockaddr_in server, client;
-  socklen_t lenAddr = sizeof(struct sockaddr_in);
+  struct sockaddr_in server;
+
   fdMain = socket(AF_INET, SOCK_DGRAM, 0);
   if(fdMain == -1)
   {

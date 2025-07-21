@@ -62,7 +62,6 @@ int main()
   sigaction(SIGTERM, &sigact, NULL);
 
   struct sockaddr_in serverTcp, serverUdp;
-  socklen_t lenAddr = sizeof(struct sockaddr_in);
 
   fdTcp = socket(AF_INET, SOCK_STREAM, 0);
   if(fdTcp == -1)

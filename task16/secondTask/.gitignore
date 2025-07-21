@@ -4,9 +4,14 @@
 *.log
 client
 server
-tester
 
-simpleParallelTcpServer
-simpleParallelTcpClient
-simpleParallelUdpServer
-simpleParallelUdpClient
+tester
+clientTcp 
+clientUdp 
+simpleParallelTcpServer 
+simpleParallelUdpServer 
+poolThreadsTcpServer 
+poolThreadsUdpServer 
+producerCustomerTcpServer 
+producerCustomerUdpServer 
+multiProtocolServer
