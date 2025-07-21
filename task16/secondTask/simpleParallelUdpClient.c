@@ -31,7 +31,7 @@ int main()
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
   server.sin_family = AF_INET;
-  server.sin_port = htons(7777);
+  server.sin_port = htons(7778);
   server.sin_addr = ip;
 
   struct sockaddr_in from;

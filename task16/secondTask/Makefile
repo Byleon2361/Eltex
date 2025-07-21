@@ -1,4 +1,4 @@
-BIN := tester simpleParallelTcpServer simpleParallelTcpClient simpleParallelUdpServer simpleParallelUdpClient poolThreadsTcpServer poolThreadsUdpServer producerCustomerTcpServer producerCustomerUdpServer
+BIN := tester simpleParallelTcpServer simpleParallelTcpClient simpleParallelUdpServer simpleParallelUdpClient poolThreadsTcpServer poolThreadsUdpServer producerCustomerTcpServer producerCustomerUdpServer multiProtocolServer
 SRC := $(BIN:=.c)
 OBJ := $(BIN:=.o)
 
