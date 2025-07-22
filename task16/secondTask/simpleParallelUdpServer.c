@@ -9,7 +9,6 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #define MAX_LENGTH_MSG 32
-#define MAX_LENGTH_QUEUE_CLIENTS 5
 
 int fdMainServer= 0;
 struct PthreadArgs 
@@ -83,9 +82,10 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  int port = 7777;
+  int port = 7778;
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
   server.sin_port = htons(port);
   server.sin_addr = ip;

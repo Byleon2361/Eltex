@@ -60,6 +60,7 @@ int main()
   sigact.sa_handler = handlerSignal;
 
   sigaction(SIGTERM, &sigact, NULL);
+  sigaction(SIGINT, &sigact, NULL);
 
   struct sockaddr_in serverTcp, serverUdp;
 
@@ -97,10 +98,12 @@ int main()
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
 
+  memset(&serverTcp, 0, sizeof(serverTcp));
   serverTcp.sin_family = AF_INET;
   serverTcp.sin_port = htons(7777);
   serverTcp.sin_addr = ip;
 
+  memset(&serverUdp, 0, sizeof(serverUdp));
   serverUdp.sin_family = AF_INET;
   serverUdp.sin_port = htons(7778);
   serverUdp.sin_addr = ip;
@@ -120,7 +123,13 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  listen(fdTcp, MAX_LENGTH_QUEUE_CLIENTS);
+  if(listen(fdTcp, MAX_LENGTH_QUEUE_CLIENTS))
+  {
+    close(fdTcp);
+    close(fdUdp);
+    perror("Error server listen");
+    exit(EXIT_FAILURE);
+  }
 
   int epollFd = epoll_create1(0);
   struct epoll_event event;

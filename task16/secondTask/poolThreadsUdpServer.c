@@ -9,40 +9,39 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #define MAX_LENGTH_MSG 32
-#define MAX_COUNT_THREADS 256
-#define MAX_LENGTH_QUEUE_CLIENTS 5
+#define MAX_COUNT_THREADS 16
 
-int fdMain = 0;
 struct server
 {
   pthread_t serverThread;
   struct sockaddr_in client;
   int isUsing;
 };
+
+int fdMain = 0;
 struct server servers[MAX_COUNT_THREADS];
+
+sigset_t set;
+int sig;
 
 void *handleClient(void *serverArg)
 {
   char timeStr[MAX_LENGTH_MSG];
   struct server *server = (struct server *)serverArg;
 
-  int fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if(fd == -1)
-  {
-    perror("Error create fd");
-    exit(EXIT_FAILURE);
-  }
-
   for(;;)
   {
-    time_t myTime = time(NULL);
-    struct tm *now = localtime(&myTime);
-    snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
+    sigwait(&set, &sig);
+    if(server->isUsing)
+    {
+      time_t myTime = time(NULL);
+      struct tm *now = localtime(&myTime);
+      snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
 
-    sendto(fd, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&server->client, sizeof(server->client));
-    server->isUsing = 0;
+      sendto(fdMain, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&server->client, sizeof(server->client));
+      server->isUsing = 0;
+    }
   }
-  close(fd);
   return NULL;
 }
 void handlerSignal(int sig)
@@ -60,6 +59,11 @@ int main()
   sigact.sa_handler = handlerSignal;
 
   sigaction(SIGTERM, &sigact, NULL);
+  sigaction(SIGINT, &sigact, NULL);
+
+  sigemptyset(&set);
+  sigaddset(&set, SIGUSR1);
+  sigprocmask(SIG_BLOCK, &set, NULL);
 
   struct sockaddr_in server;
 
@@ -79,8 +83,9 @@ int main()
 
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
-  server.sin_port = htons(7777);
+  server.sin_port = htons(7778);
   server.sin_addr = ip;
 
   if(bind(fdMain, (struct sockaddr *)&server, sizeof(server)) ==  -1)
@@ -113,6 +118,7 @@ int main()
       {
         servers[i].client = client;
         servers[i].isUsing = 1;
+        pthread_kill(servers[i].serverThread, SIGUSR1);
         break;
       }
     }

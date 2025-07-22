@@ -9,8 +9,8 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #define MAX_LENGTH_MSG 32
-#define COUNT_SERVERS 256
-#define MAX_LENGTH_QUEUE_CLIENTS 5
+#define COUNT_SERVERS 16
+#define MAX_LENGTH_QUEUE_CLIENTS 100
 
 int fd = 0;
 pthread_t servers[COUNT_SERVERS];
@@ -84,6 +84,7 @@ int main()
   sigact.sa_handler = handlerSignal;
 
   sigaction(SIGTERM, &sigact, NULL);
+  sigaction(SIGINT, &sigact, NULL);
 
   struct sockaddr_in server;
   fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -102,6 +103,7 @@ int main()
 
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
   server.sin_port = htons(7777);
   server.sin_addr = ip;
@@ -113,7 +115,12 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  listen(fd, MAX_LENGTH_QUEUE_CLIENTS);
+  if(listen(fd, MAX_LENGTH_QUEUE_CLIENTS))
+  {
+    close(fd);
+    perror("Error server listen");
+    exit(EXIT_FAILURE);
+  }
 
   for(int i = 0; i < COUNT_SERVERS; i++)
   {

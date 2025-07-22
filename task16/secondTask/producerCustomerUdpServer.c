@@ -9,8 +9,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #define MAX_LENGTH_MSG 32
-#define COUNT_SERVERS 256
-#define MAX_LENGTH_QUEUE_CLIENTS 5
+#define COUNT_SERVERS 16
 
 int fd = 0;
 pthread_t servers[COUNT_SERVERS];
@@ -64,8 +63,8 @@ void *handleClient(void *serverArg)
     snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
 
     sendto(newFd, timeStr, strlen(timeStr)+1, 0,(struct sockaddr *)&client, sizeof(client));
-    close(newFd);
   }
+  close(newFd);
 
   return NULL;
 }
@@ -84,6 +83,7 @@ int main()
   sigact.sa_handler = handlerSignal;
 
   sigaction(SIGTERM, &sigact, NULL);
+  sigaction(SIGINT, &sigact, NULL);
 
   struct sockaddr_in server;
 
@@ -103,8 +103,9 @@ int main()
 
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
-  server.sin_port = htons(7777);
+  server.sin_port = htons(7778);
   server.sin_addr = ip;
 
   if(bind(fd, (struct sockaddr *)&server, sizeof(server)) ==  -1)

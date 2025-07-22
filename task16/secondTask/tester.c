@@ -33,7 +33,6 @@ int main(int argc, char *argv[])
 
   printf("%s, %s, %d\n", nameServerProg, nameClientProg, countClients);
 
-  double t = wtime();
   pid_t pidServer = fork();
   if(pidServer == 0)
   {
@@ -47,7 +46,8 @@ int main(int argc, char *argv[])
   }
   else if(pidServer >0)
   {
-    /* sleep(1); */
+    usleep(100000);
+  double t = wtime();
     pid_t *allClientPids = malloc(countClients * sizeof(pid_t)); 
     int i = 0;
     for(i = 0; i < countClients; i++)
@@ -66,7 +66,6 @@ int main(int argc, char *argv[])
       else if(pidClient > 0)
       {
         allClientPids[i] = pidClient;
-        /* usleep(100000); */
       }
       else
       {

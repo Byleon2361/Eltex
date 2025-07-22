@@ -9,10 +9,9 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #define MAX_LENGTH_MSG 32
-#define MAX_LENGTH_QUEUE_CLIENTS 5
+#define MAX_LENGTH_QUEUE_CLIENTS 100
 
 int fd = 0;
-
 void *handleClient(void *newFdVoid)
 {
   char timeStr[MAX_LENGTH_MSG];
@@ -40,6 +39,7 @@ int main()
   sigact.sa_handler = handlerSignal;
 
   sigaction(SIGTERM, &sigact, NULL);
+  sigaction(SIGINT, &sigact, NULL);
 
   struct sockaddr_in server, client;
   socklen_t lenAddr = sizeof(struct sockaddr_in);
@@ -59,6 +59,7 @@ int main()
 
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
   server.sin_port = htons(7777);
   server.sin_addr = ip;
@@ -70,16 +71,25 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  listen(fd, MAX_LENGTH_QUEUE_CLIENTS);
+  if(listen(fd, MAX_LENGTH_QUEUE_CLIENTS) == -1)
+  {
+    close(fd);
+    perror("Error server listen");
+    exit(EXIT_FAILURE);
+  }
 
   for(;;)
   {
     int *newFd = malloc(sizeof(int));
     *newFd = accept(fd, (struct sockaddr *)&client, &lenAddr);
-    if(newFd < 0) continue;
+    if(*newFd == -1) continue;
 
     pthread_t newServer;
-    if(pthread_create(&newServer, NULL, handleClient, (void*)newFd) != 0) continue;
+    if(pthread_create(&newServer, NULL, handleClient, (void*)newFd) != 0)
+    {
+      free(newFd);
+      continue;
+    }
 
     pthread_detach(newServer);
   }

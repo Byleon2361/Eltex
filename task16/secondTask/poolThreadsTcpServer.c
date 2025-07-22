@@ -9,18 +9,21 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #define MAX_LENGTH_MSG 32
-#define MAX_COUNT_THREADS 256
-#define MAX_LENGTH_QUEUE_CLIENTS 5
+#define MAX_COUNT_THREADS 16
+#define MAX_LENGTH_QUEUE_CLIENTS 100
 
-int fd = 0;
 struct server
 {
   pthread_t serverThread;
   int newFd;
   int isUsing;
 };
-struct server servers[MAX_COUNT_THREADS];
 
+struct server servers[MAX_COUNT_THREADS];
+int fd = 0;
+
+sigset_t set;
+int sig;
 void *handleClient(void *serverArg)
 {
   char timeStr[MAX_LENGTH_MSG];
@@ -28,20 +31,24 @@ void *handleClient(void *serverArg)
 
   for(;;)
   {
-    if(server->newFd == -1)
+    sigwait(&set, &sig);
+    if(server->isUsing)
     {
-      server->isUsing = 0;
+      if(server->newFd == -1)
+      {
+        server->isUsing = 0;
+        close(server->newFd);
+        return NULL;
+      }
+
+      time_t myTime = time(NULL);
+      struct tm *now = localtime(&myTime);
+      snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
+
+      send(server->newFd, timeStr, strlen(timeStr)+1, 0);
       close(server->newFd);
-      return NULL;
+      server->isUsing = 0;
     }
-
-    time_t myTime = time(NULL);
-    struct tm *now = localtime(&myTime);
-    snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
-
-    send(server->newFd, timeStr, strlen(timeStr)+1, 0);
-    close(server->newFd);
-    server->isUsing = 0;
   }
 
   return NULL;
@@ -61,6 +68,11 @@ int main()
   sigact.sa_handler = handlerSignal;
 
   sigaction(SIGTERM, &sigact, NULL);
+  sigaction(SIGINT, &sigact, NULL);
+
+  sigemptyset(&set);
+  sigaddset(&set, SIGUSR1);
+  sigprocmask(SIG_BLOCK, &set, NULL);
 
   struct sockaddr_in server;
 
@@ -80,6 +92,7 @@ int main()
 
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
   server.sin_port = htons(7777);
   server.sin_addr = ip;
@@ -91,7 +104,12 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  listen(fd, MAX_LENGTH_QUEUE_CLIENTS);
+  if(listen(fd, MAX_LENGTH_QUEUE_CLIENTS) == -1)
+  {
+    close(fd);
+    perror("Error server listen");
+    exit(EXIT_FAILURE);
+  }
 
   for(int i = 0; i < MAX_COUNT_THREADS; i++)
   {
@@ -115,6 +133,7 @@ int main()
       {
         servers[i].newFd = newFd;
         servers[i].isUsing = 1;
+        pthread_kill(servers[i].serverThread, SIGUSR1);
         break;
       }
     }

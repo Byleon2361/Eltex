@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -30,6 +31,7 @@ int main()
 
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
   server.sin_port = htons(7777);
   server.sin_addr = ip;
@@ -43,6 +45,7 @@ int main()
 
   recv(fd, rcvMsg, MAX_LENGTH_MSG, 0);
 
+  printf("Ip server: %s, Port: %d\n", inet_ntoa(server.sin_addr),ntohs(server.sin_port));
   printf("%s\n", rcvMsg);
 
   close(fd);
