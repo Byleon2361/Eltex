@@ -29,6 +29,12 @@ void *handleClient(void *serverArg)
   char timeStr[MAX_LENGTH_MSG];
   struct server *server = (struct server *)serverArg;
 
+  int newFd = socket(AF_INET, SOCK_DGRAM, 0);
+  if(newFd == -1)
+  {
+    close(newFd);
+    return NULL;
+  }
   for(;;)
   {
     sigwait(&set, &sig);
@@ -38,7 +44,7 @@ void *handleClient(void *serverArg)
       struct tm *now = localtime(&myTime);
       snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
 
-      sendto(fdMain, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&server->client, sizeof(server->client));
+      sendto(newFd, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&server->client, sizeof(server->client));
       server->isUsing = 0;
     }
   }

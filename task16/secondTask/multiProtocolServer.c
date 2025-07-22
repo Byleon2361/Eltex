@@ -86,7 +86,6 @@ int main()
     close(fdUdp);
     exit(EXIT_FAILURE);
   }
-  optval = 1;
   if(setsockopt(fdUdp, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1)
   {
     perror("Error set socket option");
@@ -112,14 +111,14 @@ int main()
   {
     close(fdTcp);
     close(fdUdp);
-    perror("Error server create bind");
+    perror("Error server create bind tcp");
     exit(EXIT_FAILURE);
   }
   if(bind(fdUdp, (struct sockaddr *)&serverUdp, sizeof(serverUdp)) ==  -1)
   {
     close(fdTcp);
     close(fdUdp);
-    perror("Error server create bind");
+    perror("Error server create bind udp");
     exit(EXIT_FAILURE);
   }
 
@@ -157,11 +156,6 @@ int main()
       {
         handleUdp();
       }
-      /* else */
-      /* { */
-      /*   //error */
-      /* } */
-
     }
   }
   return 0;
