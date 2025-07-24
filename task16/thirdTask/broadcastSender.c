@@ -30,5 +30,6 @@ int main()
   char *msg = "Hi";
   sendto(fd, msg, strlen(msg), 0,(struct sockaddr *)&sender, (socklen_t)sizeof(sender));
 
+  close(fd);
   return 0;
 }

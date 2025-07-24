@@ -31,5 +31,6 @@ int main()
   recv(fd, msg, MAX_LEN_MSG, 0);
   printf("%s\n", msg);
 
+  close(fd);
   return 0;
 }
