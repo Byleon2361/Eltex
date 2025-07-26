@@ -5,7 +5,6 @@
 #include <sys/un.h>
 #define SOCK_PATH_SERVER "localUdpPathServer"
 #define SOCK_PATH_CLIENT "localUdpPathClient"
-#define MAX_LENGTH_QUEUE_CLIENTS 1
 #define MAX_LENGTH_MSG 20
 int main()
 {
@@ -20,6 +19,7 @@ int main()
     exit(EXIT_FAILURE);
   }
 
+  memset(&server, 0, sizeof(server));
   server.sun_family = AF_LOCAL;
   strncpy(server.sun_path, SOCK_PATH_SERVER, sizeof(server.sun_path));
 
@@ -33,8 +33,23 @@ int main()
   }
 
   socklen_t clientLen = sizeof(client);
-  recvfrom(fd, recvMsg, MAX_LENGTH_MSG, 0, (struct sockaddr *)&client, &clientLen);
-  int bytes = sendto(fd, sendMsg, strlen(sendMsg)+1, 0, (struct sockaddr *)&client, clientLen);
+  int bytes = recvfrom(fd, recvMsg, MAX_LENGTH_MSG, 0, (struct sockaddr *)&client, &clientLen);
+  if(bytes <= 0)
+  {
+    close(fd);
+    unlink(SOCK_PATH_SERVER);
+    unlink(SOCK_PATH_CLIENT);
+    perror("Error recv");
+    exit(EXIT_FAILURE);
+  }
+  if(sendto(fd, sendMsg, strlen(sendMsg)+1, 0, (struct sockaddr *)&client, clientLen) == -1)
+  {
+    close(fd);
+    unlink(SOCK_PATH_SERVER);
+    unlink(SOCK_PATH_CLIENT);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
 
   printf("%s\n", recvMsg);
 

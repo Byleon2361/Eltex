@@ -5,7 +5,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#define MAX_LENGTH_QUEUE_CLIENTS 1
+#define PORT_SERVER 7777
+#define MAX_LENGTH_QUEUE_CLIENTS 5
 #define MAX_LENGTH_MSG 20
 int main()
 {
@@ -20,8 +21,9 @@ int main()
     exit(EXIT_FAILURE);
   }
 
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
-  server.sin_port = htons(8080);
+  server.sin_port = htons(PORT_SERVER);
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
   server.sin_addr = ip;
@@ -33,7 +35,12 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  listen(fd, MAX_LENGTH_QUEUE_CLIENTS);
+  if(listen(fd, MAX_LENGTH_QUEUE_CLIENTS) == -1)
+  {
+    close(fd);
+    perror("Error listen");
+    exit(EXIT_FAILURE);
+  }
 
   socklen_t sockClientLen;
   int newFd = accept(fd, (struct sockaddr*)&client, &sockClientLen);
@@ -44,9 +51,19 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  recv(newFd, recvMsg, MAX_LENGTH_MSG, 0);
-  send(newFd, sendMsg, strlen(sendMsg)+1, 0);
-
+  int bytes = recv(newFd, recvMsg, MAX_LENGTH_MSG, 0);
+  if(bytes <= 0)
+  {
+    close(fd);
+    perror("Error create new socket");
+    exit(EXIT_FAILURE);
+  }
+  if(send(newFd, sendMsg, strlen(sendMsg)+1, 0) == -1)
+  {
+    close(fd);
+    perror("Error create new socket");
+    exit(EXIT_FAILURE);
+  }
   printf("%s\n", recvMsg);
 
   close(newFd);

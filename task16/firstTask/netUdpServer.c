@@ -7,6 +7,8 @@
 #include <arpa/inet.h>
 #define MAX_LENGTH_QUEUE_CLIENTS 1
 #define MAX_LENGTH_MSG 20
+#define PORT_SERVER 7777
+#define PORT_CLIENT 7778
 int main()
 {
   struct sockaddr_in server, client;
@@ -23,13 +25,14 @@ int main()
   struct in_addr ip;
   inet_pton(AF_INET, "127.0.0.1", &ip);
 
-
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
-  server.sin_port = htons(8081);
+  server.sin_port = htons(PORT_SERVER);
   server.sin_addr = ip;
 
+  memset(&client, 0, sizeof(server));
   client.sin_family = AF_INET;
-  client.sin_port = htons(8082);
+  client.sin_port = htons(PORT_CLIENT);
   client.sin_addr = ip;
 
   if(bind(fd, (struct sockaddr *)&server, sizeof(struct sockaddr_in)) == -1)
@@ -40,8 +43,20 @@ int main()
   }
 
   socklen_t clientLen = sizeof(client);
-  recvfrom(fd, recvMsg, MAX_LENGTH_MSG, 0, (struct sockaddr *)&client, &clientLen);
-  sendto(fd, sendMsg, strlen(sendMsg)+1, 0, (struct sockaddr *)&client, clientLen);
+  int bytes = recvfrom(fd, recvMsg, MAX_LENGTH_MSG, 0, (struct sockaddr *)&client, &clientLen);
+  if(bytes <= 0)
+  {
+    close(fd);
+    perror("Error recv");
+    exit(EXIT_FAILURE);
+  }
+
+  if(sendto(fd, sendMsg, strlen(sendMsg)+1, 0, (struct sockaddr *)&client, clientLen) == -1)
+  {
+    close(fd);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
 
   printf("%s\n", recvMsg);
 

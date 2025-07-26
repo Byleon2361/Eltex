@@ -18,6 +18,7 @@ int main()
     exit(EXIT_FAILURE);
   }
 
+  memset(&server, 0, sizeof(server));
   server.sun_family = AF_LOCAL;
   strncpy(server.sun_path, SOCK_PATH, sizeof(server.sun_path));
 
@@ -28,8 +29,19 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  send(fd, sendMsg, strlen(sendMsg)+1, 0);
-  recv(fd, recvMsg, MAX_LENGTH_MSG, 0);
+  if(send(fd, sendMsg, strlen(sendMsg)+1, 0) == -1)
+  {
+    close(fd);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
+  int bytes = recv(fd, recvMsg, MAX_LENGTH_MSG, 0);
+  if(bytes <= 0)
+  {
+    close(fd);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
 
   printf("%s\n", recvMsg);
 

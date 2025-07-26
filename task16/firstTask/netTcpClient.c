@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #define MAX_LENGTH_MSG 20
+#define PORT_SERVER 7777
 int main()
 {
   struct sockaddr_in server;
@@ -19,8 +20,9 @@ int main()
     exit(EXIT_FAILURE);
   }
 
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
-  server.sin_port = htons(8080);
+  server.sin_port = htons(PORT_SERVER);
   server.sin_addr.s_addr = inet_addr("127.0.0.1");
 
   if(connect(fd, (struct sockaddr*)&server, sizeof(server)) == -1)
@@ -30,8 +32,19 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  send(fd, sendMsg, strlen(sendMsg)+1, 0);
-  recv(fd, recvMsg, MAX_LENGTH_MSG, 0);
+  if(send(fd, sendMsg, strlen(sendMsg)+1, 0) == -1)
+  {
+    close(fd);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
+  int bytes = recv(fd, recvMsg, MAX_LENGTH_MSG, 0);
+  if(bytes <= 0)
+  {
+    close(fd);
+    perror("Error recv");
+    exit(EXIT_FAILURE);
+  }
 
   printf("%s\n", recvMsg);
 

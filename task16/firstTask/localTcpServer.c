@@ -19,6 +19,7 @@ int main()
     exit(EXIT_FAILURE);
   }
 
+  memset(&server, 0, sizeof(server));
   server.sun_family = AF_LOCAL;
   strncpy(server.sun_path, SOCK_PATH, sizeof(server.sun_path));
 
@@ -30,7 +31,13 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  listen(fd, MAX_LENGTH_QUEUE_CLIENTS);
+  if(listen(fd, MAX_LENGTH_QUEUE_CLIENTS))
+  {
+    close(fd);
+    unlink(SOCK_PATH);
+    perror("Error listen");
+    exit(EXIT_FAILURE);
+  }
 
   socklen_t sockClientLen;
   int newFd = accept(fd, (struct sockaddr*)&client, &sockClientLen);
@@ -42,8 +49,21 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  recv(newFd, recvMsg, MAX_LENGTH_MSG, 0);
-  send(newFd, sendMsg, strlen(sendMsg)+1, 0);
+  int bytes = recv(newFd, recvMsg, MAX_LENGTH_MSG, 0);
+  if(bytes <= 0)
+  {
+    close(fd);
+    unlink(SOCK_PATH);
+    perror("Error recv");
+    exit(EXIT_FAILURE);
+  }
+  if(send(newFd, sendMsg, strlen(sendMsg)+1, 0) == -1)
+  {
+    close(fd);
+    unlink(SOCK_PATH);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
 
   printf("%s\n", recvMsg);
 
