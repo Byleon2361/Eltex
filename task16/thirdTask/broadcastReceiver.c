@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #define MAX_LEN_MSG 32
+#define PORT 7777
 int main()
 {
   struct sockaddr_in receiver;
@@ -20,7 +21,7 @@ int main()
   memset(&receiver, 0, sizeof(receiver));
   receiver.sin_family = AF_INET;
   receiver.sin_addr = ip;
-  receiver.sin_port = htons(7777);
+  receiver.sin_port = htons(PORT);
 
   if(bind(fd, (struct sockaddr *)&receiver, (socklen_t)sizeof(receiver)))
   {
@@ -28,7 +29,13 @@ int main()
     close(fd);
     exit(EXIT_FAILURE);
   }
-  recv(fd, msg, MAX_LEN_MSG, 0);
+  int bytes = recv(fd, msg, MAX_LEN_MSG, 0);
+  if(bytes <= 0)
+  {
+    perror("Error recv");
+    close(fd);
+    exit(EXIT_FAILURE);
+  }
   printf("%s\n", msg);
 
   close(fd);

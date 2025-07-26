@@ -7,10 +7,10 @@
 #include <net/if.h>
 #define MAX_LEN_MSG 32
 #define MAX_LEN_ARG 12
+#define PORT 7777
 int main(int argc, char *argv[])
 {
   char interface[MAX_LEN_ARG]; 
-  printf("argc %d\n", argc);
   if(argc > 2)
   {
     fprintf(stderr, "Error: Too many args\n");
@@ -37,9 +37,10 @@ int main(int argc, char *argv[])
   memset(&receiver, 0, sizeof(receiver));
   receiver.sin_family = AF_INET;
   receiver.sin_addr = ipLocalAddr;
-  receiver.sin_port = htons(7777);
+  receiver.sin_port = htons(PORT);
 
   struct ip_mreqn mreqn;
+  memset(&mreqn, 0, sizeof(mreqn));
   mreqn.imr_multiaddr = ipGroupAddr;
   mreqn.imr_address = ipLocalAddr;
   mreqn.imr_ifindex = (argc == 2) ? if_nametoindex(interface) : 0;
@@ -57,7 +58,13 @@ int main(int argc, char *argv[])
     close(fd);
     exit(EXIT_FAILURE);
   }
-  recv(fd, msg, MAX_LEN_MSG, 0);
+  int bytes = recv(fd, msg, MAX_LEN_MSG, 0);
+  if(bytes <= 0)
+  {
+    perror("Error recv");
+    close(fd);
+    exit(EXIT_FAILURE);
+  }
   printf("%s\n", msg);
   close(fd);
 

@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+#define PORT 7777
 int main()
 {
   struct sockaddr_in sender;
@@ -19,10 +20,15 @@ int main()
   memset(&sender, 0, sizeof(sender));
   sender.sin_family = AF_INET;
   sender.sin_addr = ip;
-  sender.sin_port = htons(7777);
+  sender.sin_port = htons(PORT);
 
   char *msg = "Hi";
-  sendto(fd, msg, strlen(msg), 0,(struct sockaddr *)&sender, (socklen_t)sizeof(sender));
+  if(sendto(fd, msg, strlen(msg), 0,(struct sockaddr *)&sender, (socklen_t)sizeof(sender)) == -1)
+  {
+    perror("Error send");
+    close(fd);
+    exit(EXIT_FAILURE);
+  }
 
   close(fd);
   return 0;
