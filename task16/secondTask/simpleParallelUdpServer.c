@@ -30,10 +30,10 @@ void *handleClient(void *pthreadArgs)
   int fd = socket(AF_INET, SOCK_DGRAM, 0);
   if(fd == -1)
   {
-    perror("Error create fdMainServer");
+    perror("Error create fd");
+    close(fdMainServer);
     exit(EXIT_FAILURE);
   }
-
 
   if(bind(fd, (struct sockaddr *)&newServer, sizeof(struct sockaddr_in)) ==  -1)
   {
@@ -46,7 +46,12 @@ void *handleClient(void *pthreadArgs)
   struct tm *now = localtime(&myTime);
   snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
 
-  sendto(fd, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&client, clientLen);
+  if(sendto(fd, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&client, clientLen) == -1)
+  {
+    close(fd);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
 
   free(pthreadArgs);
   close(fd);

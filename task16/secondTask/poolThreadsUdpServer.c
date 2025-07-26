@@ -44,7 +44,12 @@ void *handleClient(void *serverArg)
       struct tm *now = localtime(&myTime);
       snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
 
-      sendto(newFd, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&server->client, sizeof(server->client));
+      if(sendto(newFd, timeStr, strlen(timeStr)+1, 0, (struct sockaddr *)&server->client, sizeof(server->client)) == -1)
+  {
+    close(newFd);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
       server->isUsing = 0;
     }
   }

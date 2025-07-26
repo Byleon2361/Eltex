@@ -1,0 +1,42 @@
+-----------------------------------
+Server: simpleParallelTcpServer; Count finished clients: 1000; Time: 0.153872 sec; Count success: 1000; Count failed: 0.
+-----------------------------------
+Server: simpleParallelTcpServer; Count finished clients: 10000; Time: 1.532044 sec; Count success: 10000; Count failed: 0.
+-----------------------------------
+Server crushed. Server: simpleParallelTcpServer; Count try clients: 100000; Count finished clients: 18157; Time: 2.802627 sec; Count success: 18157; Count failed: 81843.
+-----------------------------------
+Server: simpleParallelUdpServer; Count finished clients: 1000; Time: 0.148702 sec; Count success: 1000; Count failed: 0.
+-----------------------------------
+Server: simpleParallelUdpServer; Count finished clients: 10000; Time: 1.442748 sec; Count success: 10000; Count failed: 0.
+-----------------------------------
+Server crushed. Server: simpleParallelUdpServer; Count try clients: 100000; Count finished clients: 18156; Time: 2.708171 sec; Count success: 18156; Count failed: 81844.
+-----------------------------------
+Server: poolThreadsTcpServer; Count finished clients: 1000; Time: 0.154873 sec; Count success: 1000; Count failed: 0.
+-----------------------------------
+Server: poolThreadsTcpServer; Count finished clients: 10000; Time: 1.516769 sec; Count success: 10000; Count failed: 0.
+-----------------------------------
+Server crushed. Server: poolThreadsTcpServer; Count try clients: 100000; Count finished clients: 18156; Time: 2.776426 sec; Count success: 18156; Count failed: 81844.
+-----------------------------------
+Server: poolThreadsUdpServer; Count finished clients: 1000; Time: 0.140156 sec; Count success: 1000; Count failed: 0.
+-----------------------------------
+Server: poolThreadsUdpServer; Count finished clients: 10000; Time: 1.399822 sec; Count success: 10000; Count failed: 0.
+-----------------------------------
+Server crushed. Server: poolThreadsUdpServer; Count try clients: 100000; Count finished clients: 18140; Time: 2.545076 sec; Count success: 18140; Count failed: 81860.
+-----------------------------------
+Server: producerCustomerTcpServer; Count finished clients: 1000; Time: 0.128385 sec; Count success: 1000; Count failed: 0.
+-----------------------------------
+Server: producerCustomerTcpServer; Count finished clients: 10000; Time: 1.330175 sec; Count success: 10000; Count failed: 0.
+-----------------------------------
+Server crushed. Server: producerCustomerTcpServer; Count try clients: 100000; Count finished clients: 18139; Time: 2.398476 sec; Count success: 18139; Count failed: 81861.
+-----------------------------------
+Server: producerCustomerUdpServer; Count finished clients: 1000; Time: 0.117248 sec; Count success: 1000; Count failed: 0.
+-----------------------------------
+Server: producerCustomerUdpServer; Count finished clients: 10000; Time: 1.135788 sec; Count success: 10000; Count failed: 0.
+-----------------------------------
+Server crushed. Server: producerCustomerUdpServer; Count try clients: 100000; Count finished clients: 18123; Time: 2.048303 sec; Count success: 18123; Count failed: 81877.
+-----------------------------------
+Server: multiProtocolServer; Count finished clients: 1000; Time: 0.106186 sec; Count success: 1000; Count failed: 0.
+-----------------------------------
+Server: multiProtocolServer; Count finished clients: 10000; Time: 1.063761 sec; Count success: 10000; Count failed: 0.
+-----------------------------------
+Server crushed. Server: multiProtocolServer; Count try clients: 100000; Count finished clients: 18122; Time: 2.019297 sec; Count success: 18122; Count failed: 81878.

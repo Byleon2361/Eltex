@@ -6,12 +6,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#define MAX_LENGTH_QUEUE_CLIENTS 1
 #define MAX_LENGTH_MSG 32
+#define PORT_SERVER 7777
 int main()
 {
   struct sockaddr_in server;
-  char rcvMsg[32];
+  char rcvMsg[MAX_LENGTH_MSG];
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if(fd == -1)
   {
@@ -33,7 +33,7 @@ int main()
   inet_pton(AF_INET, "127.0.0.1", &ip);
   memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
-  server.sin_port = htons(7777);
+  server.sin_port = htons(PORT_SERVER);
   server.sin_addr = ip;
 
   if(connect(fd, (struct sockaddr *)&server, sizeof(server)) == -1)
@@ -43,7 +43,13 @@ int main()
     exit(EXIT_FAILURE);
   }
 
-  recv(fd, rcvMsg, MAX_LENGTH_MSG, 0);
+  int bytes = recv(fd, rcvMsg, MAX_LENGTH_MSG, 0);
+  if(bytes <= 0)
+  {
+    close(fd);
+    perror("Error recv");
+    exit(EXIT_FAILURE);
+  }
 
   printf("Ip server: %s, Port: %d\n", inet_ntoa(server.sin_addr),ntohs(server.sin_port));
   printf("%s\n", rcvMsg);

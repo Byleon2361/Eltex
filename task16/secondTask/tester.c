@@ -7,6 +7,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <signal.h>
+#define FILE_NAME "test.txt"
 double wtime()
 {
   struct timeval t;
@@ -20,7 +21,13 @@ int main(int argc, char *argv[])
   char nameClientProg[NAME_MAX];
   int countClients = 0;
   int countSuccess = 0;
-
+  FILE *file = fopen(FILE_NAME, "a");
+  if(file == NULL)
+  {
+    perror("Error create file");
+    exit(EXIT_FAILURE);
+  }
+  fprintf(file, "-----------------------------------\n");
   if(argc != 4)
   {
     fprintf(stderr, "Error: count args != 4. (./tester serverName clientName 50)");
@@ -69,10 +76,18 @@ int main(int argc, char *argv[])
       }
       else
       {
+        int status = 0;
+        for(int j = 0; j < i; j++)
+        {
+          waitpid(allClientPids[j], &status, 0);
+          if(WEXITSTATUS(status) == EXIT_SUCCESS)
+            countSuccess++;
+        }
+
         perror("Error fork client");
         free(allClientPids);
         t = wtime() - t;
-        printf("Time service %d clients: %0.6lf sec; count success: %d, count failed: %d\n", i, t, countSuccess, i-countSuccess);
+        fprintf(file,"Server crushed. Server: %s; Count try clients: %d; Count finished clients: %d; Time: %0.6lf sec; Count success: %d; Count failed: %d.\n", argv[1], countClients,  i, t, countSuccess, countClients-countSuccess);
         exit(EXIT_FAILURE);
       }
     }
@@ -87,7 +102,7 @@ int main(int argc, char *argv[])
     kill(pidServer, SIGTERM);
     waitpid(pidServer, NULL, 0);
   t = wtime() - t;
-  printf("Time service %d clients: %0.6lf sec; count success: %d, count failed: %d\n", countClients, t, countSuccess, countClients-countSuccess);
+        fprintf(file,"Server: %s; Count finished clients: %d; Time: %0.6lf sec; Count success: %d; Count failed: %d.\n", argv[1], i, t, countSuccess, countClients-countSuccess);
     exit(EXIT_SUCCESS);
   }
   else

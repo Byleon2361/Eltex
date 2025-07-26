@@ -21,7 +21,12 @@ void *handleClient(void *newFdVoid)
   struct tm *now = localtime(&myTime);
   snprintf(timeStr, MAX_LENGTH_MSG, "Time %d:%d:%d", now->tm_hour, now->tm_min, now->tm_sec);
 
-  send(*newFd, timeStr, strlen(timeStr)+1, 0);
+  if(send(*newFd, timeStr, strlen(timeStr)+1, 0) == -1)
+  {
+    close(fd);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
 
   close(*newFd);
   free(newFd);
