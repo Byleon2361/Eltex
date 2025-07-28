@@ -8,7 +8,6 @@
 #define MAX_LENGTH_QUEUE_CLIENTS 1
 #define MAX_LENGTH_MSG 20
 #define PORT_SERVER 7777
-#define PORT_CLIENT 7778
 int main()
 {
   struct sockaddr_in server, client;
@@ -30,10 +29,7 @@ int main()
   server.sin_port = htons(PORT_SERVER);
   server.sin_addr = ip;
 
-  memset(&client, 0, sizeof(server));
-  client.sin_family = AF_INET;
-  client.sin_port = htons(PORT_CLIENT);
-  client.sin_addr = ip;
+  memset(&client, 0, sizeof(client));
 
   if(bind(fd, (struct sockaddr *)&server, sizeof(struct sockaddr_in)) == -1)
   {
