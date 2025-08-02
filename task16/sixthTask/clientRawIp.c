@@ -8,10 +8,13 @@
 #include <arpa/inet.h>
 
 #define MAX_LENGTH_PACKET 65535
-#define PORT_SRC 7777
-#define PORT_DEST 7778
 #define UDP_HEADER_SIZE 8
 #define IP_HEADER_SIZE 20
+
+#define IP_SRC "127.0.0.1"
+#define IP_DEST "127.0.0.1"
+#define PORT_SRC 7777
+#define PORT_DEST 7778
 
 void printData(uint8_t *rcvPacket)
 {
@@ -24,8 +27,6 @@ void printData(uint8_t *rcvPacket)
 }
 void createIpHeader(uint8_t *sndPacket, int lengthUdp)
 {
-  uint32_t ip;
-  inet_pton(AF_INET, "127.0.0.1", &ip);
 
   uint8_t versionAndIhl = 0;
   versionAndIhl = (versionAndIhl | 4) << 4;
@@ -33,8 +34,10 @@ void createIpHeader(uint8_t *sndPacket, int lengthUdp)
   uint16_t lengthBigIndian = htons(lengthUdp+IP_HEADER_SIZE);
   uint8_t ttl = 255;
   uint8_t protocol = 17;
-  uint32_t ipSrc = ip;
-  uint32_t ipDest = ip;
+  uint32_t ipSrc;
+  inet_pton(AF_INET, IP_SRC, &ipSrc);
+  uint32_t ipDest;
+  inet_pton(AF_INET, IP_DEST, &ipDest);
 
   memset(sndPacket, 0, IP_HEADER_SIZE);
   memcpy(&sndPacket[0], &versionAndIhl, sizeof(versionAndIhl));
@@ -43,7 +46,6 @@ void createIpHeader(uint8_t *sndPacket, int lengthUdp)
   memcpy(&sndPacket[9], &protocol, sizeof(protocol));
   memcpy(&sndPacket[12], &ipSrc, sizeof(ipSrc));
   memcpy(&sndPacket[16], &ipDest, sizeof(ipDest));
-
 }
 int createUdpHeader(uint8_t *sndPacket, char *data)
 {
@@ -67,6 +69,7 @@ int main()
   uint8_t sndPacket[MAX_LENGTH_PACKET];
   char *data = "Hi";
   uint16_t srcPortRcvPacket = 0;
+  uint32_t srcIpRcvPacket = 0;
   int fd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP);
   if(fd == -1)
   {
@@ -86,7 +89,7 @@ int main()
 
   struct sockaddr_in server;
   struct in_addr ip; 
-  inet_pton(AF_INET, "127.0.0.1", &ip);
+  inet_pton(AF_INET, IP_DEST, &ip);
   memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
   server.sin_addr = ip;
@@ -110,7 +113,7 @@ int main()
       exit(EXIT_FAILURE);
     }
     memcpy(&srcPortRcvPacket, &rcvPacket[IP_HEADER_SIZE], sizeof(srcPortRcvPacket));
-  } while(ntohs(srcPortRcvPacket) != PORT_DEST);
+  } while((ntohs(srcPortRcvPacket) != PORT_DEST)&&(ntohl(srcIpRcvPacket) != ip.s_addr));
 
   printData(rcvPacket);
 
