@@ -1,0 +1,17 @@
+*.o
+*.a
+*.so
+*.log
+client
+server
+
+tester
+clientTcp 
+clientUdp 
+simpleParallelTcpServer 
+simpleParallelUdpServer 
+poolThreadsTcpServer 
+poolThreadsUdpServer 
+producerCustomerTcpServer 
+producerCustomerUdpServer 
+multiProtocolServer

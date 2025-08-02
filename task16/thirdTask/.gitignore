@@ -1,0 +1,11 @@
+*.o
+*.a
+*.so
+*.log
+client
+server
+
+broadcastSender 
+broadcastReceiver 
+multicastSender 
+multicastReceiver
