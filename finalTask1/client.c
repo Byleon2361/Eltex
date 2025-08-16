@@ -14,6 +14,16 @@
 #define MAX_LENGTH_MSG 64
 
 int fd = 0;
+void exitNoticeServer(int fd, uint16_t portSrc, uint16_t clientPort, struct sockaddr_in *server, int serverLen)
+{
+  uint8_t sndPacket[MAX_LENGTH_PACKET];
+  int length = createPacket(sndPacket, "fatal", portSrc, clientPort);
+    if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&server, serverLen) == -1)
+    {
+      perror("Error send");
+      exit(EXIT_FAILURE);
+    }
+}
 uint16_t createRandPort()
 {
   srand(time(NULL));
@@ -34,6 +44,7 @@ int main()
 
   struct sockaddr_in server;
   uint8_t rcvPacket[MAX_LENGTH_PACKET];
+  char recvMsg[MAX_LENGTH_MSG];
   uint8_t rcvStr[MAX_LENGTH_MSG];
   uint8_t sndPacket[MAX_LENGTH_PACKET];
   char data[MAX_LENGTH_MSG];
@@ -105,6 +116,13 @@ int main()
       }
       memcpy(&destPortRcvPacket, &rcvPacket[IP_HEADER_OFFSET+2], sizeof(destPortRcvPacket));
     } while(ntohs(destPortRcvPacket) != port);
+
+    extractData(rcvPacket, recvMsg);
+    if(strcmp(recvMsg, "fatal") == 0)
+    {
+      printf("Server shutdown\n");
+      break;
+    }
 
     printData(rcvPacket);
   }

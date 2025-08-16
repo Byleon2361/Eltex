@@ -23,6 +23,17 @@ struct PthreadArgs
   int portSrc;
   int clientPort;
 };
+void exitNoticeClient(int fd, uint16_t portSrc, uint16_t clientPort, struct sockaddr_in *client, int clientLen)
+{
+  uint8_t sndPacket[MAX_LENGTH_PACKET];
+  int length = createPacket(sndPacket, "fatal", portSrc, clientPort);
+  if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&client, clientLen) == -1)
+  {
+    close(fdMain);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
+}
 void *handleClient(void *pthreadArgs)
 {
   struct PthreadArgs *args = (struct PthreadArgs *) pthreadArgs;
@@ -42,6 +53,7 @@ void *handleClient(void *pthreadArgs)
   if(fd == -1)
   {
     perror("Error create fd");
+    exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
     close(fdMain);
     exit(EXIT_FAILURE);
   }
@@ -50,6 +62,7 @@ void *handleClient(void *pthreadArgs)
   if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&client, sizeof(client)) == -1)
   {
     perror("Error send");
+    exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
     close(fd);
     exit(EXIT_FAILURE);
   }
@@ -70,16 +83,23 @@ void *handleClient(void *pthreadArgs)
     if(retval == -1)
     {
       perror("Failed select");
+      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
+      close(fdMain);
+      exit(EXIT_FAILURE);
     }
     else if(retval == 0)
     {
       perror("Too long time waiting");
+      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
+      close(fdMain);
+      exit(EXIT_FAILURE);
     }
 
     int bytes = recvfrom(fd, rcvPacket, MAX_LENGTH_PACKET, 0, (struct sockaddr *)&client, &clientLen);
     if(bytes <= 0)
     {
       perror("Error recv");
+      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
       close(fdMain);
       exit(EXIT_FAILURE);
     }
@@ -96,6 +116,7 @@ void *handleClient(void *pthreadArgs)
     if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&client, clientLen) == -1)
     {
       close(fdMain);
+      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
       perror("Error send");
       exit(EXIT_FAILURE);
     }
