@@ -27,7 +27,7 @@ void exitNoticeClient(int fd, uint16_t portSrc, uint16_t clientPort, struct sock
 {
   uint8_t sndPacket[MAX_LENGTH_PACKET];
   int length = createPacket(sndPacket, "fatal", portSrc, clientPort);
-  if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&client, clientLen) == -1)
+  if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)client, clientLen) == -1)
   {
     close(fdMain);
     perror("Error send");
@@ -61,8 +61,8 @@ void *handleClient(void *pthreadArgs)
   length = createPacket(sndPacket, "init", args->portSrc, args->clientPort);
   if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&client, sizeof(client)) == -1)
   {
-    perror("Error send");
     exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
+    perror("Error send");
     close(fd);
     exit(EXIT_FAILURE);
   }
@@ -89,8 +89,8 @@ void *handleClient(void *pthreadArgs)
     }
     else if(retval == 0)
     {
-      perror("Too long time waiting");
       exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
+      perror("Too long time waiting");
       close(fdMain);
       exit(EXIT_FAILURE);
     }
