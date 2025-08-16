@@ -7,8 +7,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
+#include <sys/epoll.h>
 #include "rawUdp.h"
-
 #define PORT_SERVER 7777
 #define IP_SERVER "127.0.0.1"
 
@@ -46,27 +46,46 @@ void *handleClient(void *pthreadArgs)
     exit(EXIT_FAILURE);
   }
 
-    length = createPacket(sndPacket, "init", args->portSrc, args->clientPort);
-    if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&client, sizeof(client)) == -1)
-    {
-      perror("Error send");
-      close(fd);
-      exit(EXIT_FAILURE);
-    }
+  length = createPacket(sndPacket, "init", args->portSrc, args->clientPort);
+  if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&client, sizeof(client)) == -1)
+  {
+    perror("Error send");
+    close(fd);
+    exit(EXIT_FAILURE);
+  }
+
+  fd_set readfd;
+  struct timeval tv;
+  int retval;
 
   for(;;)
   {
-    do
+    FD_ZERO(&readfd);
+    FD_SET(fd, &readfd);
+
+    tv.tv_sec = 10;
+    tv.tv_usec = 0;
+
+    retval = select(fd+1, &readfd, NULL, NULL, &tv);
+    if(retval == -1)
     {
-      int bytes = recvfrom(fd, rcvPacket, MAX_LENGTH_PACKET, 0, (struct sockaddr *)&client, &clientLen);
-      if(bytes <= 0)
-      {
-        perror("Error recv");
-        close(fdMain);
-        exit(EXIT_FAILURE);
-      }
-      memcpy(&srcPortRcvPacket, &rcvPacket[IP_HEADER_OFFSET], sizeof(srcPortRcvPacket));
-    } while(ntohs(srcPortRcvPacket) != args->clientPort);
+      perror("Failed select");
+    }
+    else if(retval == 0)
+    {
+      perror("Too long time waiting");
+    }
+
+    int bytes = recvfrom(fd, rcvPacket, MAX_LENGTH_PACKET, 0, (struct sockaddr *)&client, &clientLen);
+    if(bytes <= 0)
+    {
+      perror("Error recv");
+      close(fdMain);
+      exit(EXIT_FAILURE);
+    }
+    memcpy(&srcPortRcvPacket, &rcvPacket[IP_HEADER_OFFSET], sizeof(srcPortRcvPacket));
+    if(ntohs(srcPortRcvPacket) != args->clientPort) continue;
+
     extractData(rcvPacket, recvMsg);
 
     snprintf(sendMsg, MAX_LENGTH_MSG, "%s %d", recvMsg, index);
@@ -147,8 +166,8 @@ int main()
     printData(rcvPacket);
     printf("create new server\n");
 
-      memcpy(&clientPortTemp, &rcvPacket[IP_HEADER_OFFSET], sizeof(clientPortTemp));
-      clientPort = ntohs(clientPortTemp);
+    memcpy(&clientPortTemp, &rcvPacket[IP_HEADER_OFFSET], sizeof(clientPortTemp));
+    clientPort = ntohs(clientPortTemp);
 
     struct sockaddr_in newServer;
     port++;
