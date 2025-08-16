@@ -14,6 +14,21 @@
 #define MAX_LENGTH_MSG 64
 
 int fd = 0;
+uint16_t portServer = PORT_SERVER;
+uint16_t port = 0;
+struct sockaddr_in from;
+
+void exitNoticeServer(int fd, uint16_t portSrc, uint16_t serverPort, struct sockaddr_in *server )
+{
+  uint8_t sndPacket[MAX_LENGTH_PACKET];
+  int length = createPacket(sndPacket, "fatal", portSrc, serverPort);
+  if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)server, sizeof(*server)) == -1)
+  {
+    close(fd);
+    perror("Error send");
+    exit(EXIT_FAILURE);
+  }
+}
 uint16_t createRandPort()
 {
   srand(time(NULL));
@@ -21,6 +36,7 @@ uint16_t createRandPort()
 }
 void handlerSignal(int sig)
 {
+  exitNoticeServer(fd, port, portServer, &from);
   close(fd);
   exit(EXIT_SUCCESS);
 }
@@ -40,8 +56,8 @@ int main()
   char data[MAX_LENGTH_MSG];
   uint16_t destPortRcvPacket = 0;
   int length = 0;
-  uint16_t portServer = PORT_SERVER;
-  uint16_t port = createRandPort();
+
+  port = createRandPort();
 
   fd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP);
   if(fd == -1)
@@ -56,7 +72,6 @@ int main()
   server.sin_family = AF_INET;
   server.sin_addr = ip;
 
-  struct sockaddr_in from;
   socklen_t socklen;
 
   length = createPacket(sndPacket, "init", port, PORT_SERVER);
@@ -90,6 +105,7 @@ int main()
 
     if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&from, sizeof(from)) == -1)
     {
+      exitNoticeServer(fd, port, portServer, &from);
       perror("Error send");
       close(fd);
       exit(EXIT_FAILURE);
@@ -100,6 +116,7 @@ int main()
       int bytes = recvfrom(fd, rcvPacket, MAX_LENGTH_PACKET, 0, (struct sockaddr *)&from, &socklen);
       if(bytes <= 0)
       {
+        exitNoticeServer(fd, port, portServer, &from);
         perror("Error recv");
         close(fd);
         exit(EXIT_FAILURE);

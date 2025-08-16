@@ -23,11 +23,11 @@ struct PthreadArgs
   int portSrc;
   int clientPort;
 };
-void exitNoticeClient(int fd, uint16_t portSrc, uint16_t clientPort, struct sockaddr_in *client, int clientLen)
+void exitNoticeClient(int fd, uint16_t portSrc, uint16_t clientPort, struct sockaddr_in *client)
 {
   uint8_t sndPacket[MAX_LENGTH_PACKET];
   int length = createPacket(sndPacket, "fatal", portSrc, clientPort);
-  if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)client, clientLen) == -1)
+  if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)client, sizeof(*client)) == -1)
   {
     close(fdMain);
     perror("Error send");
@@ -53,18 +53,17 @@ void *handleClient(void *pthreadArgs)
   if(fd == -1)
   {
     perror("Error create fd");
-    exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
-    close(fdMain);
-    exit(EXIT_FAILURE);
+    exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client);
+    return NULL;
   }
 
   length = createPacket(sndPacket, "init", args->portSrc, args->clientPort);
   if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&client, sizeof(client)) == -1)
   {
-    exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
+    exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client);
     perror("Error send");
     close(fd);
-    exit(EXIT_FAILURE);
+    return NULL;
   }
 
   fd_set readfd;
@@ -83,30 +82,37 @@ void *handleClient(void *pthreadArgs)
     if(retval == -1)
     {
       perror("Failed select");
-      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
-      close(fdMain);
-      exit(EXIT_FAILURE);
+      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client);
+      close(fd);
+      return NULL;
     }
     else if(retval == 0)
     {
-      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
+      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client);
       perror("Too long time waiting");
-      close(fdMain);
-      exit(EXIT_FAILURE);
+      close(fd);
+      return NULL;
     }
 
     int bytes = recvfrom(fd, rcvPacket, MAX_LENGTH_PACKET, 0, (struct sockaddr *)&client, &clientLen);
     if(bytes <= 0)
     {
-      perror("Error recv");
-      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
-      close(fdMain);
-      exit(EXIT_FAILURE);
+      perror("Error recv in handle");
+      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client);
+      close(fd);
+      return NULL;
     }
     memcpy(&srcPortRcvPacket, &rcvPacket[IP_HEADER_OFFSET], sizeof(srcPortRcvPacket));
+
     if(ntohs(srcPortRcvPacket) != args->clientPort) continue;
 
     extractData(rcvPacket, recvMsg);
+
+    if(strcmp(recvMsg, "fatal") == 0)
+    {
+      printf("Client shutdown\n");
+      break;
+    }
 
     snprintf(sendMsg, MAX_LENGTH_MSG, "%s %d", recvMsg, index);
     index++;
@@ -115,10 +121,9 @@ void *handleClient(void *pthreadArgs)
 
     if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)&client, clientLen) == -1)
     {
-      close(fdMain);
-      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client, args->clientLen);
+      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client);
       perror("Error send");
-      exit(EXIT_FAILURE);
+      return NULL;
     }
     printf("%s\n", recvMsg);
   }
@@ -178,7 +183,7 @@ int main()
       int bytes = recvfrom(fdMain, rcvPacket, MAX_LENGTH_PACKET, 0, (struct sockaddr *)&client, &clientLen);
       if(bytes <= 0)
       {
-        perror("Error recv");
+        perror("Error recv in main");
         close(fdMain);
         exit(EXIT_FAILURE);
       }
