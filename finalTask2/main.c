@@ -22,7 +22,7 @@ int main()
   do
   {
     printMenu();
-    choice = getchar();
+    scanf(" %c", &choice);
     switch(choice)
     {
       case '1':
