@@ -9,6 +9,13 @@
 #define LENGTH_HEADING 8
 #define IP_HEADER_OFFSET 20
 #define MAX_LENGTH_MSG 64
+struct udpHeader
+{
+  uint16_t portSrc;
+  uint16_t portDest;
+  uint16_t length;
+  uint16_t checksum;
+};
 
 void printData(uint8_t *rcvPacket);
 void extractData(uint8_t *rcvPacket, char *dataStr);

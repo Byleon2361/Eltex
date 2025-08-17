@@ -29,10 +29,9 @@ void exitNoticeClient(int fd, uint16_t portSrc, uint16_t clientPort, struct sock
   int length = createPacket(sndPacket, "fatal", portSrc, clientPort);
   if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)client, sizeof(*client)) == -1)
   {
-    close(fdMain);
     perror("Error send");
-    exit(EXIT_FAILURE);
   }
+    close(fdMain);
 }
 void *handleClient(void *pthreadArgs)
 {
@@ -66,34 +65,8 @@ void *handleClient(void *pthreadArgs)
     return NULL;
   }
 
-  fd_set readfd;
-  struct timeval tv;
-  int retval;
-
   for(;;)
   {
-    FD_ZERO(&readfd);
-    FD_SET(fd, &readfd);
-
-    tv.tv_sec = 10;
-    tv.tv_usec = 0;
-
-    retval = select(fd+1, &readfd, NULL, NULL, &tv);
-    if(retval == -1)
-    {
-      perror("Failed select");
-      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client);
-      close(fd);
-      return NULL;
-    }
-    else if(retval == 0)
-    {
-      exitNoticeClient(fd, args->portSrc, args->clientPort, &args->client);
-      perror("Too long time waiting");
-      close(fd);
-      return NULL;
-    }
-
     int bytes = recvfrom(fd, rcvPacket, MAX_LENGTH_PACKET, 0, (struct sockaddr *)&client, &clientLen);
     if(bytes <= 0)
     {

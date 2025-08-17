@@ -24,10 +24,9 @@ void exitNoticeServer(int fd, uint16_t portSrc, uint16_t serverPort, struct sock
   int length = createPacket(sndPacket, "fatal", portSrc, serverPort);
   if(sendto(fd, sndPacket, length, 0, (struct sockaddr *)server, sizeof(*server)) == -1)
   {
-    close(fd);
     perror("Error send");
-    exit(EXIT_FAILURE);
   }
+  close(fd);
 }
 uint16_t createRandPort()
 {

@@ -13,17 +13,16 @@ void extractData(uint8_t *rcvPacket, char *dataStr)
 }
 int createPacket(uint8_t *sndPacket, char *data, int portSrc, int portDest)
 {
+  struct udpHeader udpHeader;
   int length = LENGTH_HEADING+strlen(data)+1;
-  uint16_t portSrcBigIndian = htons(portSrc);
-  uint16_t portDestBigIndian = htons(portDest);
-  uint16_t lengthBigIndian = htons(length);
-  uint16_t checksum = 0;
 
-  memcpy(&sndPacket[0], &portSrcBigIndian, sizeof(portSrcBigIndian));
-  memcpy(&sndPacket[2], &portDestBigIndian, sizeof(portDestBigIndian));
-  memcpy(&sndPacket[4], &lengthBigIndian, sizeof(lengthBigIndian));
-  memcpy(&sndPacket[6], &checksum, sizeof(checksum));
-  memcpy(&sndPacket[8], data, strlen(data)+1);
+  udpHeader.portSrc = htons(portSrc);
+  udpHeader.portDest = htons(portDest);
+  udpHeader.length = htons(length);
+  udpHeader.checksum = 0;
+
+  memcpy(sndPacket, &udpHeader, sizeof(udpHeader));
+  memcpy(sndPacket+sizeof(data), data, strlen(data)+1);
 
   return length;
 }
