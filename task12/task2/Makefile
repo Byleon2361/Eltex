@@ -1,10 +1,4 @@
-all: app server client
-
-app: pipe.o
-	gcc -Wall -o app pipe.o
-
-pipe.o: pipe.c
-	gcc -c pipe.c
+all: server client
 
 server: server.o
 	gcc -Wall -o server server.o
@@ -22,4 +16,4 @@ clear:
 	rm pipe
 
 clean:
-	rm -rf app server client *.o
+	rm -rf server client *.o
