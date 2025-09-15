@@ -3,11 +3,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/mman.h>
+#include <sys/wait.h>
 #define MAX_COUNT_DRIVERS 32
 enum status
 {

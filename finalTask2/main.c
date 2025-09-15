@@ -55,6 +55,7 @@ int main()
         get_drivers();
         break;
       case '5':
+        cleanAll();
         exit = 1;
         break;
       default:

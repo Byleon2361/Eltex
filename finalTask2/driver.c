@@ -6,6 +6,10 @@ int statusPipes[MAX_COUNT_DRIVERS][2];
 
 int countDrivers = 0;
 
+void signal_handler(int sig)
+{
+  exit(EXIT_SUCCESS);
+}
 void init()
 {
   for(int i = 0; i < MAX_COUNT_DRIVERS; i++)
@@ -30,7 +34,8 @@ void cleanAll()
     close(driverPipes[i][1]);
     close(statusPipes[i][0]);
     close(statusPipes[i][1]);
-    kill(drivers[i].pid, SIGINT);
+    kill(drivers[i].pid, SIGTERM);
+    waitpid(drivers[i].pid, NULL, 0);
   }
 }
 struct driver create_driver()
@@ -43,6 +48,7 @@ struct driver create_driver()
     close(driverPipes[countDrivers][1]);
     close(statusPipes[countDrivers][0]);
     driver_func(countDrivers);
+    exit(EXIT_SUCCESS);
   }
   else if (pid > 0)
   {
@@ -66,6 +72,8 @@ struct driver create_driver()
 }
 void driver_func(int index)
 {
+  signal(SIGTERM, signal_handler);
+
   struct timeval tv;
   fd_set readfds;
 
@@ -75,6 +83,11 @@ void driver_func(int index)
     FD_SET(driverPipes[index][0], &readfds);
 
     int active = select(driverPipes[index][0]+1, &readfds, NULL, NULL, NULL);
+    if(active == -1)
+    {
+      perror("Error in select");
+      exit(EXIT_FAILURE);
+    }
     if(active > 0 && FD_ISSET(driverPipes[index][0], &readfds))
     {
       int readBytes = read(driverPipes[index][0], &tv, sizeof(tv));
